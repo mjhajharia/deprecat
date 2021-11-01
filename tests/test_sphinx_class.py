@@ -8,14 +8,14 @@ import warnings
 
 import pytest
 
-import deprecated.sphinx
+import deprecat.sphinx
 
 
 def test_class_deprecation_using_a_simple_decorator():
     # stream is used to store the deprecation message for testing
     stream = io.StringIO()
 
-    # To deprecated the class, we use a simple decorator
+    # To deprecate the class, we use a simple decorator
     # which patches the original ``__new__`` method.
 
     def simple_decorator(wrapped_cls):
@@ -44,8 +44,8 @@ def test_class_deprecation_using_a_simple_decorator():
 @pytest.mark.skipif(
     sys.version_info < (3, 3), reason="Classes should have mutable docstrings -- resolved in python 3.3"
 )
-def test_class_deprecation_using_deprecated_decorator():
-    @deprecated.sphinx.deprecated(version="7.8.9")
+def test_class_deprecation_using_deprecat_decorator():
+    @deprecat.sphinx.deprecat(version="7.8.9")
     class MyBaseClass(object):
         pass
 
@@ -65,12 +65,12 @@ def test_class_deprecation_using_deprecated_decorator():
 @pytest.mark.skipif(
     sys.version_info < (3, 3), reason="Classes should have mutable docstrings -- resolved in python 3.3"
 )
-def test_subclass_deprecation_using_deprecated_decorator():
-    @deprecated.sphinx.deprecated(version="7.8.9")
+def test_subclass_deprecation_using_deprecat_decorator():
+    @deprecat.sphinx.deprecat(version="7.8.9")
     class MyBaseClass(object):
         pass
 
-    @deprecated.sphinx.deprecated(version="7.8.9")
+    @deprecat.sphinx.deprecat(version="7.8.9")
     class MySubClass(MyBaseClass):
         pass
 
@@ -88,12 +88,11 @@ def test_subclass_deprecation_using_deprecated_decorator():
     sys.version_info < (3, 3), reason="Classes should have mutable docstrings -- resolved in python 3.3"
 )
 def test_isinstance_versionadded():
-    # https://github.com/tantale/deprecated/issues/48
-    @deprecated.sphinx.versionadded(version="X.Y", reason="some reason")
+    @deprecat.sphinx.versionadded(version="X.Y", reason="some reason")
     class VersionAddedCls:
         pass
 
-    @deprecated.sphinx.versionadded(version="X.Y", reason="some reason")
+    @deprecat.sphinx.versionadded(version="X.Y", reason="some reason")
     class VersionAddedChildCls(VersionAddedCls):
         pass
 
@@ -106,11 +105,11 @@ def test_isinstance_versionadded():
     sys.version_info < (3, 3), reason="Classes should have mutable docstrings -- resolved in python 3.3"
 )
 def test_isinstance_versionchanged():
-    @deprecated.sphinx.versionchanged(version="X.Y", reason="some reason")
+    @deprecat.sphinx.versionchanged(version="X.Y", reason="some reason")
     class VersionChangedCls:
         pass
 
-    @deprecated.sphinx.versionchanged(version="X.Y", reason="some reason")
+    @deprecat.sphinx.versionchanged(version="X.Y", reason="some reason")
     class VersionChangedChildCls(VersionChangedCls):
         pass
 
@@ -122,26 +121,26 @@ def test_isinstance_versionchanged():
 @pytest.mark.skipif(
     sys.version_info < (3, 3), reason="Classes should have mutable docstrings -- resolved in python 3.3"
 )
-def test_isinstance_deprecated():
-    @deprecated.sphinx.deprecated(version="X.Y", reason="some reason")
-    class DeprecatedCls:
+def test_isinstance_deprecat():
+    @deprecat.sphinx.deprecat(version="X.Y", reason="some reason")
+    class deprecatCls:
         pass
 
-    @deprecated.sphinx.deprecated(version="Y.Z", reason="some reason")
-    class DeprecatedChildCls(DeprecatedCls):
+    @deprecat.sphinx.deprecat(version="Y.Z", reason="some reason")
+    class deprecatChildCls(deprecatCls):
         pass
 
-    instance = DeprecatedChildCls()
-    assert isinstance(instance, DeprecatedChildCls)
-    assert isinstance(instance, DeprecatedCls)
+    instance = deprecatChildCls()
+    assert isinstance(instance, deprecatChildCls)
+    assert isinstance(instance, deprecatCls)
 
 
 @pytest.mark.skipif(
     sys.version_info < (3, 3), reason="Classes should have mutable docstrings -- resolved in python 3.3"
 )
 def test_isinstance_versionadded_versionchanged():
-    @deprecated.sphinx.versionadded(version="X.Y")
-    @deprecated.sphinx.versionchanged(version="X.Y.Z")
+    @deprecat.sphinx.versionadded(version="X.Y")
+    @deprecat.sphinx.versionchanged(version="X.Y.Z")
     class AddedChangedCls:
         pass
 

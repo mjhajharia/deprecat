@@ -16,23 +16,22 @@ of `Paragraph-level markups <http://www.sphinx-doc.org/en/stable/markup/para.htm
 The purpose of this module is to defined decorators which adds this Sphinx directives
 to the docstring of your function and classes.
 
-Of course, the ``@deprecated`` decorator will emit a deprecation warning
+Of course, the ``@deprecat`` decorator will emit a deprecation warning
 when the function/method is called or the class is constructed.
 """
 import re
 import textwrap
-
+import functools
 import wrapt
 
-from deprecated.classic import ClassicAdapter
-from deprecated.classic import deprecated as _classic_deprecated
-
+from deprecat.classic import ClassicAdapter
+from deprecat.classic import deprecat as _classic_deprecat
 
 class SphinxAdapter(ClassicAdapter):
     """
     Sphinx adapter -- *for advanced usage only*
 
-    This adapter override the :class:`~deprecated.classic.ClassicAdapter`
+    This adapter override the :class:`~deprecat.classic.ClassicAdapter`
     in order to add the Sphinx directives to the end of the function/class docstring.
     Such a directive is a `Paragraph-level markup <http://www.sphinx-doc.org/en/stable/markup/para.html>`_
 
@@ -49,6 +48,7 @@ class SphinxAdapter(ClassicAdapter):
         action=None,
         category=DeprecationWarning,
         line_length=70,
+        deprecated_args=None
     ):
         """
         Construct a wrapper adapter.
@@ -85,11 +85,13 @@ class SphinxAdapter(ClassicAdapter):
             Max line length of the directive text. If non nul, a long text is wrapped in several lines.
         """
         if not version:
-            # https://github.com/tantale/deprecated/issues/40
             raise ValueError("'version' argument is required in Sphinx directives")
         self.directive = directive
         self.line_length = line_length
-        super(SphinxAdapter, self).__init__(reason=reason, version=version, action=action, category=category)
+        self.deprecated_args = deprecated_args
+        if deprecated_args is not None:
+            self.directive = "note"
+        super(SphinxAdapter, self).__init__(reason=reason, version=version, action=action, category=category, deprecated_args=deprecated_args)
 
     def __call__(self, wrapped):
         """
@@ -134,7 +136,7 @@ class SphinxAdapter(ClassicAdapter):
             return wrapped
         return super(SphinxAdapter, self).__call__(wrapped)
 
-    def get_deprecated_msg(self, wrapped, instance):
+    def get_deprecated_msg(self, wrapped, instance, kwargs):
         """
         Get the deprecation warning message (without Sphinx cross-referencing syntax) for the user.
 
@@ -148,11 +150,14 @@ class SphinxAdapter(ClassicAdapter):
            Strip Sphinx cross-referencing syntax from warning message.
 
         """
-        msg = super(SphinxAdapter, self).get_deprecated_msg(wrapped, instance)
+        msg = super(SphinxAdapter, self).get_deprecated_msg(wrapped, instance, kwargs)
         # Strip Sphinx cross reference syntax (like ":function:", ":py:func:" and ":py:meth:")
         # Possible values are ":role:`foo`", ":domain:role:`foo`"
         # where ``role`` and ``domain`` should match "[a-zA-Z]+"
-        msg = re.sub(r"(?: : [a-zA-Z]+ )? : [a-zA-Z]+ : (`[^`]*`)", r"\1", msg, flags=re.X)
+        
+        if msg:
+            msg = re.sub(r"(?: : [a-zA-Z]+ )? : [a-zA-Z]+ : (`[^`]*`)", r"\1", msg, flags=re.X)
+                
         return msg
 
 
@@ -215,7 +220,7 @@ def versionchanged(reason="", version="", line_length=70):
     return adapter
 
 
-def deprecated(reason="", version="", line_length=70, **kwargs):
+def deprecat(reason="", version="", line_length=70, deprecated_args=None, **kwargs):
     """
     This decorator can be used to insert a "deprecated" directive
     in your function/class docstring in order to documents the
@@ -255,4 +260,6 @@ def deprecated(reason="", version="", line_length=70, **kwargs):
     kwargs["reason"] = reason
     kwargs["version"] = version
     kwargs["line_length"] = line_length
-    return _classic_deprecated(directive=directive, adapter_cls=adapter_cls, **kwargs)
+    kwargs["deprecated_args"] = deprecated_args
+
+    return _classic_deprecat(directive=directive, adapter_cls=adapter_cls, **kwargs)

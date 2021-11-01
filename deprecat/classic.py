@@ -3,7 +3,7 @@
 Classic deprecation warning
 ===========================
 
-Classic ``@deprecated`` decorator to deprecate old python classes, functions or methods.
+Classic ``@deprecat`` decorator to deprecate old python classes, functions or methods.
 
 .. _The Warnings Filter: https://docs.python.org/3/library/warnings.html#the-warnings-filter
 """
@@ -39,7 +39,7 @@ class ClassicAdapter(wrapt.AdapterFactory):
     This adapter is used to get the deprecation message according to the wrapped object type:
     class, function, standard method, static method, or class method.
 
-    This is the base class of the :class:`~deprecated.sphinx.SphinxAdapter` class
+    This is the base class of the :class:`~deprecat.sphinx.SphinxAdapter` class
     which is used to update the wrapped object docstring.
 
     You can also inherit this class to change the deprecation message.
@@ -50,12 +50,12 @@ class ClassicAdapter(wrapt.AdapterFactory):
 
        import inspect
 
-       from deprecated.classic import ClassicAdapter
-       from deprecated.classic import deprecated
+       from deprecat.classic import ClassicAdapter
+       from deprecat.classic import deprecat
 
 
        class MyClassicAdapter(ClassicAdapter):
-           def get_deprecated_msg(self, wrapped, instance):
+           def get_deprecat_msg(self, wrapped, instance):
                if instance is None:
                    if inspect.isclass(wrapped):
                        fmt = "The class {name} is deprecated."
@@ -78,7 +78,7 @@ class ClassicAdapter(wrapt.AdapterFactory):
 
     .. code-block:: python
 
-       @deprecated(reason="use another function", adapter_cls=MyClassicAdapter)
+       @deprecat(reason="use another function", adapter_cls=MyClassicAdapter)
        def some_old_function(x, y):
            return x + y
     """
@@ -145,17 +145,20 @@ class ClassicAdapter(wrapt.AdapterFactory):
             name = wrapped.__name__
         if self.deprecated_args is not None:
             fmt = "Call to deprecated Parameter(s) {name}."
-            self.deprecated_args = set(self.deprecated_args.split())
-            argstodeprecate = self.deprecated_args.intersection(kwargs)
-            if argstodeprecate is not None:
+            deprecated_args = set(self.deprecated_args.split())
+            argstodeprecate = deprecated_args.intersection(kwargs)
+            if len(argstodeprecate)!=0:
                 name = ", ".join(repr(arg) for arg in argstodeprecate)
-                if name=="":
-                    self.action=False
+            else:
+                name=""
+        if name=="":
+            return None
         if self.reason:
             fmt += " ({reason})"
         if self.version:
             fmt += " -- Deprecated since version {version}."
         return fmt.format(name=name, reason=self.reason or "", version=self.version or "")
+
 
     def __call__(self, wrapped):
         """
@@ -192,7 +195,7 @@ class ClassicAdapter(wrapt.AdapterFactory):
         return wrapped
 
 
-def deprecated(*args, **kwargs):
+def deprecat(*args, **kwargs):
     """
     This is a decorator which can be used to mark functions
     as deprecated. It will result in a warning being emitted
@@ -200,14 +203,14 @@ def deprecated(*args, **kwargs):
 
     **Classic usage:**
 
-    To use this, decorate your deprecated function with **@deprecated** decorator:
+    To use this, decorate your deprecated function with **@deprecat** decorator:
 
     .. code-block:: python
 
-       from deprecated import deprecated
+       from deprecat import deprecat
 
 
-       @deprecated
+       @deprecat
        def some_old_function(x, y):
            return x + y
 
@@ -215,16 +218,16 @@ def deprecated(*args, **kwargs):
 
     .. code-block:: python
 
-       from deprecated import deprecated
+       from deprecat import deprecat
 
 
        class SomeClass(object):
-           @deprecated
+           @deprecat
            def some_old_method(self, x, y):
                return x + y
 
 
-       @deprecated
+       @deprecat
        class SomeOldClass(object):
            pass
 
@@ -233,10 +236,10 @@ def deprecated(*args, **kwargs):
 
     .. code-block:: python
 
-       from deprecated import deprecated
+       from deprecat import deprecat
 
 
-       @deprecated(reason="use another function", version='1.2.0')
+       @deprecat(reason="use another function", version='1.2.0')
        def some_old_function(x, y):
            return x + y
 
@@ -246,10 +249,10 @@ def deprecated(*args, **kwargs):
 
     .. code-block:: python
 
-       from deprecated import deprecated
+       from deprecat import deprecat
 
 
-       @deprecated(category=PendingDeprecationWarning)
+       @deprecat(category=PendingDeprecationWarning)
        def some_old_function(x, y):
            return x + y
 
@@ -260,10 +263,10 @@ def deprecated(*args, **kwargs):
 
     .. code-block:: python
 
-       from deprecated import deprecated
+       from deprecat import deprecat
 
 
-       @deprecated(action="error")
+       @deprecat(action="error")
        def some_old_function(x, y):
            return x + y
 
@@ -291,12 +294,13 @@ def deprecated(*args, **kwargs):
             @wrapt.decorator(adapter=adapter)
             def wrapper_function(wrapped_, instance_, args_, kwargs_):
                 msg = adapter.get_deprecated_msg(wrapped_, instance_, kwargs_)
-                if action:
-                    with warnings.catch_warnings():
-                        warnings.simplefilter(action, category)
+                if msg:
+                    if action:
+                        with warnings.catch_warnings():
+                            warnings.simplefilter(action, category)
+                            warnings.warn(msg, category=category, stacklevel=_routine_stacklevel)
+                    else:
                         warnings.warn(msg, category=category, stacklevel=_routine_stacklevel)
-                else:
-                    warnings.warn(msg, category=category, stacklevel=_routine_stacklevel)
                 return wrapped_(*args_, **kwargs_)
 
             return wrapper_function(wrapped)
@@ -304,4 +308,4 @@ def deprecated(*args, **kwargs):
         else:
             raise TypeError(repr(type(wrapped)))
 
-    return functools.partial(deprecated, **kwargs)
+    return functools.partial(deprecat, **kwargs)

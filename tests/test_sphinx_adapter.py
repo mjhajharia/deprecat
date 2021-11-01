@@ -3,10 +3,10 @@ import textwrap
 
 import pytest
 
-from deprecated.sphinx import SphinxAdapter
-from deprecated.sphinx import deprecated
-from deprecated.sphinx import versionadded
-from deprecated.sphinx import versionchanged
+from deprecat.sphinx import SphinxAdapter
+from deprecat.sphinx import deprecat
+from deprecat.sphinx import versionadded
+from deprecat.sphinx import versionchanged
 
 
 @pytest.mark.parametrize(
@@ -104,7 +104,7 @@ def test_sphinx_adapter__empty_docstring(directive):
     [
         (versionadded, "versionadded"),
         (versionchanged, "versionchanged"),
-        (deprecated, "deprecated"),
+        (deprecated, "deprecates"),
     ],
 )
 def test_decorator_accept_line_length(decorator_factory, directive):
