@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 #  -*- coding: utf-8 -*-
-
+u"""Deprecation helper"""
 from setuptools import setup
 
 setup(
     name='deprecat',
-    version='1.0.0',
-    url='https://github.com/mjhajharia/deprecat',
-    download_url='https://github.com/mjhajharia/deprecat/archive/refs/tags/v1.0.0.tar.gz',
+    version='1.1.0',
+    url='https://github.com/deprecat/deprecat',
+    download_url='https://github.com/deprecat/deprecat/archive/refs/tags/v1.1.0.tar.gz',
     license='MIT',
     author='Meenal Jhajharia',  
     author_email='meenal@mjhajharia.com',
