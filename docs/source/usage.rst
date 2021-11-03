@@ -129,3 +129,27 @@ Additionally, we have a modified docstring (``print(myfunction.__doc__``) as fol
   .. deprecated:: 0.3.0
     this is very buggy say bye
 
+
+from deprecat.sphinx import deprecat
+@deprecat(
+    reason="""i dont like y""", deprecated_arg="y",
+    version='0.3.0')
+def myfunction(x,y,z):
+    """
+    Parameters
+    ----------
+
+    x: float
+      x is some number
+
+    y: float
+      y is another number
+    
+    z: float
+      z is a bad number
+
+    Returns
+    -------
+    Product
+    """
+    return x*y*z

@@ -49,7 +49,7 @@ class ClassicAdapter(wrapt.AdapterFactory):
         Can be one of "error", "ignore", "always", "default", "module", or "once".
         If ``None`` or empty, the the global filtering mechanism is used.
 
-    deprecated_args: str
+    deprecated_arg: str
         String of kwargs to be deprecated, e.g. "x y" to deprecate `x` and `y`.
 
     category: class
@@ -58,12 +58,12 @@ class ClassicAdapter(wrapt.AdapterFactory):
         you can inherit this class to define your own deprecation warning category.
     """
 
-    def __init__(self, reason="", version="", action=None, deprecated_args=None, category=DeprecationWarning):
+    def __init__(self, reason="", version="", action=None, deprecated_arg=None, category=DeprecationWarning):
         self.reason = reason or ""
         self.version = version or ""
         self.action = action
         self.category = category
-        self.deprecated_args=deprecated_args
+        self.deprecated_arg=deprecated_arg
         super(ClassicAdapter, self).__init__()
 
     def get_deprecated_msg(self, wrapped, instance, kwargs):
@@ -96,12 +96,12 @@ class ClassicAdapter(wrapt.AdapterFactory):
                 fmt = "Call to deprecated class method {name}."
             else:
                 fmt = "Call to deprecated method {name}."
-        if self.deprecated_args is None:
+        if self.deprecated_arg is None:
             name = wrapped.__name__
-        if self.deprecated_args is not None:
+        if self.deprecated_arg is not None:
             fmt = "Call to deprecated Parameter(s) {name}."
-            deprecated_args = set(self.deprecated_args.split())
-            argstodeprecate = deprecated_args.intersection(kwargs)
+            deprecated_arg = set(self.deprecated_arg.split())
+            argstodeprecate = deprecated_arg.intersection(kwargs)
             if len(argstodeprecate)!=0:
                 name = ", ".join(repr(arg) for arg in argstodeprecate)
             else:

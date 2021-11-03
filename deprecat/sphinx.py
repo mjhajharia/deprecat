@@ -41,8 +41,8 @@ class SphinxAdapter(ClassicAdapter):
         Can be one of "error", "ignore", "always", "default", "module", or "once".
         If ``None`` or empty, the the global filtering mechanism is used.
 
-    deprecated_args: str
-        String of kwargs to be deprecated, e.g. "x y" to deprecate `x` and `y`.
+    deprecated_arg: str
+        String of kwarg to be deprecated, e.g. "x" to deprecate `x`.
 
     category: class
         The warning category to use for the deprecation warning.
@@ -75,15 +75,15 @@ class SphinxAdapter(ClassicAdapter):
         action=None,
         category=DeprecationWarning,
         line_length=70,
-        deprecated_args=None
+        deprecated_arg=None
     ):
 
         if not version:
             raise ValueError("'version' argument is required in Sphinx directives")
         self.directive = directive
         self.line_length = line_length
-        self.deprecated_args = deprecated_args
-        super(SphinxAdapter, self).__init__(reason=reason, version=version, action=action, category=category, deprecated_args=deprecated_args)
+        self.deprecated_arg = deprecated_arg
+        super(SphinxAdapter, self).__init__(reason=reason, version=version, action=action, category=category, deprecated_arg=deprecated_arg)
 
     def __call__(self, wrapped):
         """
@@ -99,34 +99,73 @@ class SphinxAdapter(ClassicAdapter):
         -------
         the decorated class or function.
         """
-        fmt = ".. {directive}:: {version}" if self.version else ".. {directive}::"
-        div_lines = [fmt.format(directive=self.directive, version=self.version)]
-        width = self.line_length - 3 if self.line_length > 3 else 2 ** 16
-        reason = textwrap.dedent(self.reason).strip()
-        for paragraph in reason.splitlines():
-            if paragraph:
-                div_lines.extend(
-                    textwrap.fill(
-                        paragraph,
-                        width=width,
-                        initial_indent="   ",
-                        subsequent_indent="   ",
-                    ).splitlines()
-                )
-            else:
-                div_lines.append("")
-
-        # -- get the docstring, normalize the trailing newlines
         docstring = textwrap.dedent(wrapped.__doc__ or "")
         if docstring:
-            # An empty line must separate the original docstring and the directive.
+        # An empty line must separate the original docstring and the directive.
             docstring = re.sub(r"\n+$", "", docstring, flags=re.DOTALL) + "\n\n"
         else:
-            # Avoid "Explicit markup ends without a blank line" when the decorated function has no docstring
+        # Avoid "Explicit markup ends without a blank line" when the decorated function has no docstring
             docstring = "\n"
 
-        # -- append the directive division to the docstring
-        docstring += "".join("{}\n".format(line) for line in div_lines)
+        width = self.line_length - 3 if self.line_length > 3 else 2 ** 16
+        reason = textwrap.dedent(self.reason).strip()
+
+        if self.deprecated_arg is None:
+            fmt = ".. {directive}:: {version}" if self.version else ".. {directive}::"
+            div_lines = [fmt.format(directive=self.directive, version=self.version)]
+
+            for paragraph in reason.splitlines():
+                if paragraph:
+                    div_lines.extend(
+                        textwrap.fill(
+                            paragraph,
+                            width=width,
+                            initial_indent="   ",
+                            subsequent_indent="   ",
+                        ).splitlines()
+                    )
+                else:
+                    div_lines.append("")
+
+            # -- append the directive division to the docstring
+            docstring += "".join("{}\n".format(line) for line in div_lines)
+
+        else:
+            fmt = ".. {directive}::\n   Parameter {deprecated_arg} deprecated since {version}"
+            div_lines = [fmt.format(directive="warning", version=self.version,deprecated_arg=self.deprecated_arg)]
+            search = re.search("Parameters[\s]*\n[\s]*----------", docstring)
+            params_string = docstring[search.start():search.end()]
+            indentsize = re.search("----------", params_string).start() - re.search("Parameters[\s]*\n", params_string).end()
+            indent = ' '*indentsize
+            if re.search(f"\n{indent}-----", docstring[search.end():]) is not None:
+                params_section_end = search.end() + re.search(f"\n{indent}-----", docstring[search.end():]).start()
+                dashes_in_next_section = docstring[params_section_end:].count('-')
+                params_section_end = params_section_end - dashes_in_next_section
+                params_section = docstring[search.start():params_section_end]
+            else:
+                params_section = docstring[search.start():]
+
+            description_start = re.search(f"\n{indent}{self.deprecated_arg}\s*:", params_section).end()
+            insert_pos = re.search(f"\n{indent}\S", params_section[description_start:]).start()
+            fmt = "\n{indent}    .. {directive}::"
+            div_lines = [fmt.format(directive="warning",indent =indent)]
+            width = 2**16
+            reason = textwrap.dedent(reason).strip()
+            for paragraph in reason.splitlines():
+                if paragraph:
+                    div_lines.extend(
+                        textwrap.fill(
+                            paragraph,
+                            width=width,
+                            initial_indent=indent+'    '+'   ',
+                            subsequent_indent=indent,
+                        ).splitlines()
+                    )
+                else:
+                    div_lines.append("")
+                    
+            a = "".join("{}\n".format(line) for line in div_lines)
+            docstring = docstring[:search.start() + description_start+insert_pos]+a+docstring[search.start() + description_start+insert_pos:]
 
         wrapped.__doc__ = docstring
         if self.directive in {"versionadded", "versionchanged"}:
@@ -226,7 +265,7 @@ def versionchanged(reason="", version="", line_length=70):
     return adapter
 
 
-def deprecat(reason="", version="", line_length=70, deprecated_args=None, **kwargs):
+def deprecat(reason="", version="", line_length=70, deprecated_arg=None, **kwargs):
     """
     This decorator can be used to insert a "deprecated" directive
     in your function/class docstring in order to documents the
@@ -245,7 +284,7 @@ def deprecat(reason="", version="", line_length=70, deprecated_args=None, **kwar
         Can be one of "error", "ignore", "always", "default", "module", or "once".
         If ``None`` or empty, the the global filtering mechanism is used.
 
-    deprecated_args: str
+    : str
         String of kwargs to be deprecated, e.g. "x y" to deprecate `x` and `y`.
 
     category: class
@@ -266,6 +305,6 @@ def deprecat(reason="", version="", line_length=70, deprecated_args=None, **kwar
     kwargs["reason"] = reason
     kwargs["version"] = version
     kwargs["line_length"] = line_length
-    kwargs["deprecated_args"] = deprecated_args
+    kwargs["deprecated_arg"] = deprecated_arg
 
     return _classic_deprecat(directive=directive, adapter_cls=adapter_cls, **kwargs)
