@@ -9,8 +9,6 @@ when they are created, modified or deprecated.
 To do that, `Sphinx <http://www.sphinx-doc.org>`_ has a set
 of `Paragraph-level markups <http://www.sphinx-doc.org/en/stable/markup/para.html>`_:
 
-- ``versionadded``: to document the version of the project which added the described feature to the library,
-- ``versionchanged``: to document changes of a feature,
 - ``deprecated``: to document a deprecated feature.
 
 The purpose of this module is to defined decorators which adds this Sphinx directives
@@ -35,14 +33,12 @@ class SphinxAdapter(ClassicAdapter):
     in order to add the Sphinx directives to the end of the function/class docstring.
     Such a directive is a `Paragraph-level markup <http://www.sphinx-doc.org/en/stable/markup/para.html>`_
 
-    - The directive can be one of "versionadded", "versionchanged" or "deprecated".
     - The version number is added if provided.
     - The reason message is obviously added in the directive block if not empty.
     """
 
     def __init__(
         self,
-        directive,
         reason="",
         version="",
         action=None,
@@ -52,10 +48,6 @@ class SphinxAdapter(ClassicAdapter):
     ):
         """
         Construct a wrapper adapter.
-
-        :type  directive: str
-        :param directive:
-            Sphinx directive: can be one of "versionadded", "versionchanged" or "deprecated".
 
         :type  reason: str
         :param reason:
@@ -86,11 +78,9 @@ class SphinxAdapter(ClassicAdapter):
         """
         if not version:
             raise ValueError("'version' argument is required in Sphinx directives")
-        self.directive = directive
+        self.directive = "admonition"
         self.line_length = line_length
         self.deprecated_args = deprecated_args
-        if deprecated_args is not None:
-            self.directive = "note"
         super(SphinxAdapter, self).__init__(reason=reason, version=version, action=action, category=category, deprecated_args=deprecated_args)
 
     def __call__(self, wrapped):
@@ -102,7 +92,7 @@ class SphinxAdapter(ClassicAdapter):
         :return: the decorated class or function.
         """
         # -- build the directive division
-        fmt = ".. {directive}:: {version}" if self.version else ".. {directive}::"
+        fmt = ".. {directive}:: Deprecated since v{version}\n   :class: attention\n" if self.version else ".. {directive}:: Deprecated\n   :class: attention\n"
         div_lines = [fmt.format(directive=self.directive, version=self.version)]
         width = self.line_length - 3 if self.line_length > 3 else 2 ** 16
         reason = textwrap.dedent(self.reason).strip()
@@ -132,8 +122,6 @@ class SphinxAdapter(ClassicAdapter):
         docstring += "".join("{}\n".format(line) for line in div_lines)
 
         wrapped.__doc__ = docstring
-        if self.directive in {"versionadded", "versionchanged"}:
-            return wrapped
         return super(SphinxAdapter, self).__call__(wrapped)
 
     def get_deprecated_msg(self, wrapped, instance, kwargs):
@@ -145,9 +133,6 @@ class SphinxAdapter(ClassicAdapter):
         :param instance: The object to which the wrapped function was bound when it was called.
 
         :return: The warning message.
-
-        .. versionadded:: 1.2.12
-           Strip Sphinx cross-referencing syntax from warning message.
 
         """
         msg = super(SphinxAdapter, self).get_deprecated_msg(wrapped, instance, kwargs)
@@ -161,63 +146,6 @@ class SphinxAdapter(ClassicAdapter):
         return msg
 
 
-def versionadded(reason="", version="", line_length=70):
-    """
-    This decorator can be used to insert a "versionadded" directive
-    in your function/class docstring in order to documents the
-    version of the project which adds this new functionality in your library.
-
-    :param str reason:
-        Reason message which documents the addition in your library (can be omitted).
-
-    :param str version:
-        Version of your project which adds this feature.
-        If you follow the `Semantic Versioning <https://semver.org/>`_,
-        the version number has the format "MAJOR.MINOR.PATCH", and,
-        in the case of a new functionality, the "PATCH" component should be "0".
-
-    :type  line_length: int
-    :param line_length:
-        Max line length of the directive text. If non nul, a long text is wrapped in several lines.
-
-    :return: the decorated function.
-    """
-    adapter = SphinxAdapter(
-        'versionadded',
-        reason=reason,
-        version=version,
-        line_length=line_length,
-    )
-    return adapter
-
-
-def versionchanged(reason="", version="", line_length=70):
-    """
-    This decorator can be used to insert a "versionchanged" directive
-    in your function/class docstring in order to documents the
-    version of the project which modifies this functionality in your library.
-
-    :param str reason:
-        Reason message which documents the modification in your library (can be omitted).
-
-    :param str version:
-        Version of your project which modifies this feature.
-        If you follow the `Semantic Versioning <https://semver.org/>`_,
-        the version number has the format "MAJOR.MINOR.PATCH".
-
-    :type  line_length: int
-    :param line_length:
-        Max line length of the directive text. If non nul, a long text is wrapped in several lines.
-
-    :return: the decorated function.
-    """
-    adapter = SphinxAdapter(
-        'versionchanged',
-        reason=reason,
-        version=version,
-        line_length=line_length,
-    )
-    return adapter
 
 
 def deprecat(reason="", version="", line_length=70, deprecated_args=None, **kwargs):
@@ -252,14 +180,25 @@ def deprecat(reason="", version="", line_length=70, deprecated_args=None, **kwar
 
     :return: a decorator used to deprecate a function.
 
-    .. versionchanged:: 1.2.13
-       Change the signature of the decorator to reflect the valid use cases.
     """
-    directive = kwargs.pop('directive', 'deprecated')
     adapter_cls = kwargs.pop('adapter_cls', SphinxAdapter)
     kwargs["reason"] = reason
     kwargs["version"] = version
     kwargs["line_length"] = line_length
     kwargs["deprecated_args"] = deprecated_args
 
-    return _classic_deprecat(directive=directive, adapter_cls=adapter_cls, **kwargs)
+    return _classic_deprecat(adapter_cls=adapter_cls, **kwargs)
+
+@deprecat(
+    reason=""" this is very buggy say bye""",
+    version='0.3.0')
+def myfunction(x):
+    """    
+    Here's an example function!!
+
+    Calculate the square of a number.
+
+    :param x: a number
+    :return: number * number
+    """
+    return x*x
