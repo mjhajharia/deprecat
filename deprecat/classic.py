@@ -2,9 +2,8 @@
 Classic deprecation warning
 ===========================
 
-Classic ``@deprecat`` decorator to deprecate old python classes, functions or methods.
+Classic ``@deprecat`` decorator to deprecate python classes, functions, methods or kwargs.
 
-.. _The Warnings Filter: https://docs.python.org/3/library/warnings.html#the-warnings-filter
 """
 import functools
 import inspect
@@ -33,9 +32,7 @@ string_types = (type(b''), type(u''))
 
 class ClassicAdapter(wrapt.AdapterFactory):
     """
-    Classic adapter -- *for advanced usage only*
-
-    This adapter is used to get the deprecation message according to the wrapped object type:
+    Classic adapter is used to get the deprecation message according to the wrapped object type:
     class, function, standard method, static method, or class method.
 
     This is the base class of the :class:`~deprecat.sphinx.SphinxAdapter` class
@@ -88,20 +85,17 @@ class ClassicAdapter(wrapt.AdapterFactory):
 
         :type  reason: str
         :param reason:
-            Reason message which documents the deprecation in your library (can be omitted).
+            Reason for deprecation.
 
         :type  version: str
         :param version:
             Version of your project which deprecates this feature.
-            If you follow the `Semantic Versioning <https://semver.org/>`_,
-            the version number has the format "MAJOR.MINOR.PATCH".
 
         :type  action: str
         :param action:
-            A warning filter used to activate or not the deprecation warning.
+            A warning filter used to specify the deprecation warning.
             Can be one of "error", "ignore", "always", "default", "module", or "once".
             If ``None`` or empty, the the global filtering mechanism is used.
-            See: `The Warnings Filter`_ in the Python documentation.
 
         :type deprecated_args: str
         :param deprecated_args:
@@ -166,12 +160,6 @@ class ClassicAdapter(wrapt.AdapterFactory):
         :param wrapped: Wrapped class or function.
 
         :return: the decorated class or function.
-
-        .. versionchanged:: 1.2.4
-           Don't pass arguments to :meth:`object.__new__` (other than *cls*).
-
-        .. versionchanged:: 1.2.8
-           The warning filter is not set if the *action* parameter is ``None`` or empty.
         """
         if inspect.isclass(wrapped):
             old_new1 = wrapped.__new__
