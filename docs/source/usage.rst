@@ -129,5 +129,3 @@ Additionally, we have a modified docstring (``print(myfunction.__doc__``) as fol
   .. deprecated:: 0.3.0
     this is very buggy say bye
 
-In sphinx this is rendered `like this <http://localhost:8000/source/api.html#deprecat.sphinx.myfunction>`_
-
