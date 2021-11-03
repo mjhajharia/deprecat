@@ -1,21 +1,11 @@
-# coding: utf-8
 """
 Sphinx directive integration
 ============================
 
-We usually need to document the life-cycle of functions and classes:
-when they are created, modified or deprecated.
-
-To do that, `Sphinx <http://www.sphinx-doc.org>`_ has a set
-of `Paragraph-level markups <http://www.sphinx-doc.org/en/stable/markup/para.html>`_:
-
-- ``deprecated``: to document a deprecated feature.
-
 The purpose of this module is to defined decorators which adds this Sphinx directives
-to the docstring of your function and classes.
-
-Of course, the ``@deprecat`` decorator will emit a deprecation warning
+to the docstring of your function and classes. Additionally, the ``@deprecat`` decorator will emit a deprecation warning
 when the function/method is called or the class is constructed.
+
 """
 import re
 import textwrap
@@ -27,14 +17,17 @@ from deprecat.classic import deprecat as _classic_deprecat
 
 class SphinxAdapter(ClassicAdapter):
     """
-    Sphinx adapter -- *for advanced usage only*
-
-    This adapter override the :class:`~deprecat.classic.ClassicAdapter`
+    Sphinx adapter overrides the :class:`~deprecat.classic.ClassicAdapter`
     in order to add the Sphinx directives to the end of the function/class docstring.
     Such a directive is a `Paragraph-level markup <http://www.sphinx-doc.org/en/stable/markup/para.html>`_
 
     - The version number is added if provided.
-    - The reason message is obviously added in the directive block if not empty.
+    - The reason message is added in the directive block if not empty.
+    
+    
+    
+    .. seealso::
+       We use the admonition directive with the class specification "attention" to render deprecation messages in Sphinx documentation. `[ref] <https://pradyunsg.me/furo/reference/admonitions/?highlight=warning#custom-titles>`_
     """
 
     def __init__(
@@ -51,20 +44,17 @@ class SphinxAdapter(ClassicAdapter):
 
         :type  reason: str
         :param reason:
-            Reason message which documents the deprecation in your library (can be omitted).
+            Reason for deprecation.
 
         :type  version: str
         :param version:
             Version of your project which deprecates this feature.
-            If you follow the `Semantic Versioning <https://semver.org/>`_,
-            the version number has the format "MAJOR.MINOR.PATCH".
 
         :type  action: str
         :param action:
-            A warning filter used to activate or not the deprecation warning.
+            A warning filter used to specify the deprecation warning.
             Can be one of "error", "ignore", "always", "default", "module", or "once".
             If ``None`` or empty, the the global filtering mechanism is used.
-            See: `The Warnings Filter`_ in the Python documentation.
 
         :type  category: type
         :param category:
@@ -74,7 +64,11 @@ class SphinxAdapter(ClassicAdapter):
 
         :type  line_length: int
         :param line_length:
-            Max line length of the directive text. If non nul, a long text is wrapped in several lines.
+            Max line length of the directive text. If non null, a long text is wrapped in several lines.
+            
+        :type deprecated_args: str
+        :param deprecated_args:
+            String of kwargs to be deprecated, e.g. "x y" to deprecate `x` and `y`.
         """
         if not version:
             raise ValueError("'version' argument is required in Sphinx directives")
@@ -91,7 +85,6 @@ class SphinxAdapter(ClassicAdapter):
 
         :return: the decorated class or function.
         """
-        # -- build the directive division
         fmt = ".. {directive}:: Deprecated since v{version}\n   :class: attention\n" if self.version else ".. {directive}:: Deprecated\n   :class: attention\n"
         div_lines = [fmt.format(directive=self.directive, version=self.version)]
         width = self.line_length - 3 if self.line_length > 3 else 2 ** 16
@@ -131,6 +124,8 @@ class SphinxAdapter(ClassicAdapter):
         :param wrapped: Wrapped class or function.
 
         :param instance: The object to which the wrapped function was bound when it was called.
+        
+        :param kwargs: The keyword arguments of the wrapped function
 
         :return: The warning message.
 
@@ -165,7 +160,10 @@ def deprecat(reason="", version="", line_length=70, deprecated_args=None, **kwar
     :type  line_length: int
     :param line_length:
         Max line length of the directive text. If non nul, a long text is wrapped in several lines.
-
+        
+    :type deprecated_args: str
+        :param deprecated_args:
+            String of kwargs to be deprecated, e.g. "x y" to deprecate `x` and `y`.
     Keyword arguments can be:
 
     -   "action":
