@@ -11,9 +11,6 @@ pip install deprecat
 ```
 ## Usage
 
-Usage
-=====
-
 Deprecated function
 -------------------
 
