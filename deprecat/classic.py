@@ -39,31 +39,33 @@ class ClassicAdapter(wrapt.AdapterFactory):
     Parameters
     ----------
     reason: str
-        Reason for deprecation.
+        Reason for deprecation of this method or class.
 
     version: str
-        Version of your project which deprecates this feature.
+        Version of your project which deprecates this method or class.
     
     action: str
         A warning filter used to specify the deprecation warning.
         Can be one of "error", "ignore", "always", "default", "module", or "once".
         If ``None`` or empty, the the global filtering mechanism is used.
 
-    deprecated_arg: str
-        String of kwargs to be deprecated, e.g. "x y" to deprecate `x` and `y`.
+    deprecated_args: dict
+        Dictionary in the following format to deprecate `x` and `y`
+        deprecated_args = {'x': {'reason': 'some reason','version': '1.0'}, 'y': {'reason': 'another reason','version': '2.0'}}
 
     category: class
         The warning category to use for the deprecation warning.
         By default, the category class is :class:`~DeprecationWarning`,
         you can inherit this class to define your own deprecation warning category.
+
     """
 
-    def __init__(self, reason="", version="", action=None, deprecated_arg=None, category=DeprecationWarning):
+    def __init__(self, reason="", version="", action=None, deprecated_args=None, category=DeprecationWarning):
         self.reason = reason or ""
         self.version = version or ""
         self.action = action
         self.category = category
-        self.deprecated_arg=deprecated_arg
+        self.deprecated_args = deprecated_args
         super(ClassicAdapter, self).__init__()
 
     def get_deprecated_msg(self, wrapped, instance, kwargs):
@@ -96,23 +98,39 @@ class ClassicAdapter(wrapt.AdapterFactory):
                 fmt = "Call to deprecated class method {name}."
             else:
                 fmt = "Call to deprecated method {name}."
-        if self.deprecated_arg is None:
+
+        if self.deprecated_args is None:
             name = wrapped.__name__
-        if self.deprecated_arg is not None:
-            fmt = "Call to deprecated Parameter(s) {name}."
-            deprecated_arg = set(self.deprecated_arg.split())
-            argstodeprecate = deprecated_arg.intersection(kwargs)
-            if len(argstodeprecate)!=0:
-                name = ", ".join(repr(arg) for arg in argstodeprecate)
+            if self.reason:
+                fmt += " ({reason})"
+            if self.version:
+                fmt += " -- Deprecated since version {version}."
+
+            return {f'{name}': fmt.format(name=name, reason=self.reason or "", version=self.version or "")}
+
+
+        if self.deprecated_args is not None:                
+            self.argstodeprecate = set(self.deprecated_args.keys()).intersection(kwargs)
+            if len(self.argstodeprecate)!=0:
+                warningargs={}
+                #store deprecation message for each argument
+                for arg in self.argstodeprecate:
+                    name = arg
+                    fmt = "Call to deprecated Parameter {name}."
+                    if self.deprecated_args[arg]['reason']:
+                        fmt += " ({reason})"
+                    if self.deprecated_args[arg]['version']:
+                        fmt += " -- Deprecated since v{version}."
+                    warningargs[arg] = fmt.format(name=name, reason=self.deprecated_args[arg]['reason'] or "", version=self.deprecated_args[arg]['version'] or "")
             else:
                 name=""
+
         if name=="":
             return None
-        if self.reason:
-            fmt += " ({reason})"
-        if self.version:
-            fmt += " -- Deprecated since version {version}."
-        return fmt.format(name=name, reason=self.reason or "", version=self.version or "")
+        else:
+            return warningargs
+        
+        
 
 
     def __call__(self, wrapped):
@@ -135,12 +153,17 @@ class ClassicAdapter(wrapt.AdapterFactory):
 
             def wrapped_cls(cls, *args, **kwargs):
                 msg = self.get_deprecated_msg(wrapped=wrapped, instance=None, kwargs=kwargs)
-                if self.action:
-                    with warnings.catch_warnings():
-                        warnings.simplefilter(self.action, self.category)
-                        warnings.warn(msg, category=self.category, stacklevel=_class_stacklevel)
-                else:
-                    warnings.warn(msg, category=self.category, stacklevel=_class_stacklevel)
+                
+                for key in msg.keys():
+                    message = msg[key]
+                    #create a warning for every deprecated argument
+                    if self.action:
+                        with warnings.catch_warnings():
+                            warnings.simplefilter(self.action, self.category)
+                            warnings.warn(message, category=self.category, stacklevel=_class_stacklevel)
+                    else:
+                        warnings.warn(message, category=self.category, stacklevel=_class_stacklevel)
+    
                 if old_new1 is object.__new__:
                     return old_new1(cls)
                 # actually, we don't know the real signature of *old_new1*
@@ -181,12 +204,14 @@ def deprecat(*args, **kwargs):
             def wrapper_function(wrapped_, instance_, args_, kwargs_):
                 msg = adapter.get_deprecated_msg(wrapped_, instance_, kwargs_)
                 if msg:
-                    if action:
-                        with warnings.catch_warnings():
-                            warnings.simplefilter(action, category)
-                            warnings.warn(msg, category=category, stacklevel=_routine_stacklevel)
-                    else:
-                        warnings.warn(msg, category=category, stacklevel=_routine_stacklevel)
+                    for key in msg.keys():
+                        message = msg[key]
+                        if action:
+                            with warnings.catch_warnings():
+                                warnings.simplefilter(action, category)
+                                warnings.warn(message, category=category, stacklevel=_routine_stacklevel)
+                        else:
+                            warnings.warn(message, category=category, stacklevel=_routine_stacklevel)
                 return wrapped_(*args_, **kwargs_)
 
             return wrapper_function(wrapped)

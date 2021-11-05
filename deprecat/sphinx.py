@@ -1,4 +1,3 @@
-
 """
 Sphinx directive integration
 ============================
@@ -41,8 +40,9 @@ class SphinxAdapter(ClassicAdapter):
         Can be one of "error", "ignore", "always", "default", "module", or "once".
         If ``None`` or empty, the the global filtering mechanism is used.
 
-    deprecated_arg: str
-        String of kwarg to be deprecated, e.g. "x" to deprecate `x`.
+    deprecated_args: dict
+        Dictionary in the following format to deprecate `x` and `y`
+        deprecated_args = {'x': {'reason': 'some reason','version': '1.0'},'y': {'reason': 'another reason','version': '2.0'}}
 
     category: class
         The warning category to use for the deprecation warning.
@@ -61,9 +61,18 @@ class SphinxAdapter(ClassicAdapter):
     in order to add the Sphinx directives to the end of the function/class docstring.
     Such a directive is a `Paragraph-level markup <http://www.sphinx-doc.org/en/stable/markup/para.html>`_
 
-    - The directive can be one of "versionadded", "versionchanged" or "deprecated".
-    - The version number is added if provided.
-    - The reason message is added in the directive block if not empty.
+    * The directive can be one of "versionadded", "versionchanged" or "deprecated".
+    * The version number is added if provided.
+    * The reason message is added in the directive block if not empty.
+
+    .. seealso::
+        We use admonitions in sphinx to render warnings for every deprecated argument just below its description in docstring.
+        refer to `this <https://pradyunsg.me/furo/reference/admonitions/?highlight=warning#custom-titles>`_ link for more information.
+    
+    Warnings
+    --------
+    deprecat supports docstring modification for deprecated_args only in the numpydoc format, if your documentation uses any other format, this won't work. 
+    Later we might add support for other formats, for now there are no such plans.
 
     """
 
@@ -75,15 +84,12 @@ class SphinxAdapter(ClassicAdapter):
         action=None,
         category=DeprecationWarning,
         line_length=70,
-        deprecated_arg=None
+        deprecated_args=None
     ):
-
-        if not version:
-            raise ValueError("'version' argument is required in Sphinx directives")
+        self.deprecated_args = deprecated_args
         self.directive = directive
         self.line_length = line_length
-        self.deprecated_arg = deprecated_arg
-        super(SphinxAdapter, self).__init__(reason=reason, version=version, action=action, category=category, deprecated_arg=deprecated_arg)
+        super(SphinxAdapter, self).__init__(reason=reason, version=version, action=action, category=category, deprecated_args=deprecated_args)
 
     def __call__(self, wrapped):
         """
@@ -110,10 +116,11 @@ class SphinxAdapter(ClassicAdapter):
         width = self.line_length - 3 if self.line_length > 3 else 2 ** 16
         reason = textwrap.dedent(self.reason).strip()
 
-        if self.deprecated_arg is None:
+        if self.deprecated_args is None:
             fmt = ".. {directive}:: {version}" if self.version else ".. {directive}::"
             div_lines = [fmt.format(directive=self.directive, version=self.version)]
-
+            
+            #formatting for docstring
             for paragraph in reason.splitlines():
                 if paragraph:
                     div_lines.extend(
@@ -131,41 +138,71 @@ class SphinxAdapter(ClassicAdapter):
             docstring += "".join("{}\n".format(line) for line in div_lines)
 
         else:
-            fmt = ".. {directive}::\n   Parameter {deprecated_arg} deprecated since {version}"
-            div_lines = [fmt.format(directive="warning", version=self.version,deprecated_arg=self.deprecated_arg)]
-            search = re.search("Parameters[\s]*\n[\s]*----------", docstring)
-            params_string = docstring[search.start():search.end()]
-            indentsize = re.search("----------", params_string).start() - re.search("Parameters[\s]*\n", params_string).end()
-            indent = ' '*indentsize
-            if re.search(f"\n{indent}-----", docstring[search.end():]) is not None:
-                params_section_end = search.end() + re.search(f"\n{indent}-----", docstring[search.end():]).start()
-                dashes_in_next_section = docstring[params_section_end:].count('-')
-                params_section_end = params_section_end - dashes_in_next_section
-                params_section = docstring[search.start():params_section_end]
-            else:
-                params_section = docstring[search.start():]
 
-            description_start = re.search(f"\n{indent}{self.deprecated_arg}\s*:", params_section).end()
-            insert_pos = re.search(f"\n{indent}\S", params_section[description_start:]).start()
-            fmt = "\n{indent}    .. {directive}::"
-            div_lines = [fmt.format(directive="warning",indent =indent)]
-            width = 2**16
-            reason = textwrap.dedent(reason).strip()
-            for paragraph in reason.splitlines():
-                if paragraph:
-                    div_lines.extend(
-                        textwrap.fill(
-                            paragraph,
-                            width=width,
-                            initial_indent=indent+'    '+'   ',
-                            subsequent_indent=indent,
-                        ).splitlines()
-                    )
+            for arg in set(self.deprecated_args.keys()):
+                #first we search for the location of the parameters section
+                search = re.search("Parameters[\s]*\n[\s]*----------", docstring)
+                params_string = docstring[search.start():search.end()]
+
+                #we store the indentation of the values 
+                indentsize = re.search("----------", params_string).start() - re.search("Parameters[\s]*\n", params_string).end()
+                indent = ' '*indentsize
+
+                # we check if there is another section after parameters
+                if re.search(f"\n{indent}-----", docstring[search.end():]) is not None:
+                    #if yes then we find the range of the parameters section
+                    params_section_end = search.end() + re.search(f"\n{indent}-----", docstring[search.end():]).start()
+                    dashes_in_next_section = docstring[params_section_end:].count('-')
+                    params_section_end = params_section_end - dashes_in_next_section
+                    params_section = docstring[search.start():params_section_end]
                 else:
-                    div_lines.append("")
-                    
-            a = "".join("{}\n".format(line) for line in div_lines)
-            docstring = docstring[:search.start() + description_start+insert_pos]+a+docstring[search.start() + description_start+insert_pos:]
+                    #else the entire remaining docstring is in the parameters section
+                    params_section = docstring[search.start():]
+
+                #we search for the description of the particular parameter we care about
+                description_start = re.search(f"\n{indent}{arg}\s*:", params_section).end()
+
+                #we check whether there are more parameters after this one, or if its the last parameter described in the secion
+                #and store the position where we insert the warning
+
+                if re.search(f"\n{indent}\S", params_section[description_start:]):
+                    insert_pos = re.search(f"\n{indent}\S", params_section[description_start:]).start()
+                else:
+                    insert_pos = len(params_section[description_start:])
+                
+                #finally we store the warning fmt string
+                if self.deprecated_args[arg]['version']!="":
+                    #the spaces are specifically cherrypicked for numpydoc docstrings
+                    fmt = "\n{indent}    .. admonition:: Deprecated\n      :class: warning\n\n      Parameter {arg} deprecated since {version}"
+                    div_lines = [fmt.format(version=self.deprecated_args[arg]['version'],arg=arg,indent =indent)]
+                else:
+                    fmt = "\n{indent}    .. admonition:: Deprecated\n      :class: warning\n\n      Parameter {arg} deprecated"
+                    div_lines = [fmt.format(version=self.deprecated_args[arg]['version'],arg=arg,indent =indent)]
+                width = 2**16
+                
+                #formatting warning message
+                if self.deprecated_args[arg]['reason']:
+                    reason = self.deprecated_args[arg]['reason']
+                    reason = textwrap.dedent(reason).strip()
+                    reason = f'({reason})'
+                    for paragraph in reason.splitlines():
+                        if paragraph:
+                            div_lines.extend(
+                                textwrap.fill(
+                                    paragraph,
+                                    width=width,
+                                    initial_indent=indent+'      ',
+                                    subsequent_indent=indent,
+                                ).splitlines()
+                            )
+                        else:
+                            div_lines.append("")
+                       
+                a = "".join("{}\n".format(line) for line in div_lines)
+                docstring = docstring[:search.start() + description_start+insert_pos]+a+"\n\n"+docstring[search.start() + description_start+insert_pos:]
+                docstring=docstring.replace('\n\n\n','\n\n')
+                docstring = docstring.replace('\n\n\n','\n\n')
+
 
         wrapped.__doc__ = docstring
         if self.directive in {"versionadded", "versionchanged"}:
@@ -198,12 +235,14 @@ class SphinxAdapter(ClassicAdapter):
         # Possible values are ":role:`foo`", ":domain:role:`foo`"
         # where ``role`` and ``domain`` should match "[a-zA-Z]+"
         
+        #remember the msg variable is a dict
         if msg:
-            msg = re.sub(r"(?: : [a-zA-Z]+ )? : [a-zA-Z]+ : (`[^`]*`)", r"\1", msg, flags=re.X)
+            for key in msg.keys():
+                msg[key] = re.sub(r"(?: : [a-zA-Z]+ )? : [a-zA-Z]+ : (`[^`]*`)", r"\1", msg[key], flags=re.X)
                 
         return msg
 
-
+#this should only be used for functions, methods or classes. NOT parameters.
 def versionadded(reason="", version="", line_length=70):
     """
     This decorator can be used to insert a "versionadded" directive
@@ -213,13 +252,14 @@ def versionadded(reason="", version="", line_length=70):
     Parameters
     ----------
     reason: str
-        Reason for deprecation.
+        Reason for deprecation of this method or class.
 
     version: str
-        Version of your project which deprecates this feature.
+        Version of your project which deprecates this method or class.
     
     line_length: numeric
         Max line length of the directive text. If non null, a long text is wrapped in several lines.
+        
 
     Returns
     -------
@@ -235,6 +275,7 @@ def versionadded(reason="", version="", line_length=70):
     return adapter
 
 
+#this should only be used for functions, methods or classes. NOT parameters.
 def versionchanged(reason="", version="", line_length=70):
     """
     This decorator can be used to insert a "versionchanged" directive
@@ -244,10 +285,10 @@ def versionchanged(reason="", version="", line_length=70):
     Parameters
     ----------
     reason: str
-        Reason for deprecation.
+        Reason for deprecation of this method or class.
 
     version: str
-        Version of your project which deprecates this feature.
+        Version of your project which deprecates this method or class.
     
     line_length: numeric
         Max line length of the directive text. If non null, a long text is wrapped in several lines.
@@ -265,7 +306,7 @@ def versionchanged(reason="", version="", line_length=70):
     return adapter
 
 
-def deprecat(reason="", version="", line_length=70, deprecated_arg=None, **kwargs):
+def deprecat(reason="", version="", line_length=70, deprecated_args=None, **kwargs):
     """
     This decorator can be used to insert a "deprecated" directive
     in your function/class docstring in order to documents the
@@ -274,10 +315,10 @@ def deprecat(reason="", version="", line_length=70, deprecated_arg=None, **kwarg
     Parameters
     ----------
     reason: str
-        Reason for deprecation.
+        Reason for deprecation of this method or class.
 
     version: str
-        Version of your project which deprecates this feature.
+        Version of your project which deprecates this method or class.
 
     action: str
         A warning filter used to specify the deprecation warning.
@@ -295,9 +336,13 @@ def deprecat(reason="", version="", line_length=70, deprecated_arg=None, **kwarg
     line_length: numeric
         Max line length of the directive text. If non null, a long text is wrapped in several lines.
 
+    deprecated_args: dict
+        Dictionary in the following format to deprecate `x` and `y`
+        deprecated_args = {'x': {'reason': 'some reason','version': '1.0'},'y': {'reason': 'another reason', 'version': '2.0'}}
+
     Returns
     -------
-    Decorator used to deprecate a function.
+    Decorator used to deprecate a function, method, class or kwarg.
 
     """
     directive = kwargs.pop('directive', 'deprecated')
@@ -305,6 +350,6 @@ def deprecat(reason="", version="", line_length=70, deprecated_arg=None, **kwarg
     kwargs["reason"] = reason
     kwargs["version"] = version
     kwargs["line_length"] = line_length
-    kwargs["deprecated_arg"] = deprecated_arg
+    kwargs["deprecated_args"] = deprecated_args
 
     return _classic_deprecat(directive=directive, adapter_cls=adapter_cls, **kwargs)
