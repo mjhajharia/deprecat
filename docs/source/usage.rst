@@ -169,7 +169,8 @@ This is the output we get when we try to run ``multiply(a=1,b=2,c=3)``
   
   6
 
-##Docstring
+Docstring
+---------
 
 Now, the cool part is your docstring (``multiply.__doc__``) get's modified as well. This is how it renders in Sphinx:
 
