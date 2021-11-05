@@ -173,10 +173,10 @@ class SphinxAdapter(ClassicAdapter):
                 #finally we store the warning fmt string
                 if self.deprecated_args[arg]['version']!="":
                     #the spaces are specifically cherrypicked for numpydoc docstrings
-                    fmt = "\n{indent}    .. admonition:: Deprecated\n      :class: warning\n\n      Parameter {arg} deprecated since {version}"
+                    fmt = "\n\n{indent}    .. admonition:: Deprecated\n      :class: warning\n\n      Parameter {arg} deprecated since {version}"
                     div_lines = [fmt.format(version=self.deprecated_args[arg]['version'],arg=arg,indent =indent)]
                 else:
-                    fmt = "\n{indent}    .. admonition:: Deprecated\n      :class: warning\n\n      Parameter {arg} deprecated"
+                    fmt = "\n\n{indent}    .. admonition:: Deprecated\n      :class: warning\n\n      Parameter {arg} deprecated"
                     div_lines = [fmt.format(version=self.deprecated_args[arg]['version'],arg=arg,indent =indent)]
                 width = 2**16
                 
@@ -184,24 +184,22 @@ class SphinxAdapter(ClassicAdapter):
                 if self.deprecated_args[arg]['reason']:
                     reason = self.deprecated_args[arg]['reason']
                     reason = textwrap.dedent(reason).strip()
-                    reason = f'({reason})'
-                    for paragraph in reason.splitlines():
-                        if paragraph:
-                            div_lines.extend(
-                                textwrap.fill(
-                                    paragraph,
-                                    width=width,
-                                    initial_indent=indent+'      ',
-                                    subsequent_indent=indent,
-                                ).splitlines()
-                            )
-                        else:
-                            div_lines.append("")
+                    divlines += f'({reason})'
+#                     for paragraph in reason.splitlines():
+#                         if paragraph:
+#                             div_lines.extend(
+#                                 textwrap.fill(
+#                                     paragraph,
+#                                     width=width,
+#                                     initial_indent=indent+'      ',
+#                                     subsequent_indent=indent,
+#                                 ).splitlines()
+#                             )
+#                         else:
+#                             div_lines.append("")
                        
                 a = "".join("{}\n".format(line) for line in div_lines)
-                docstring = docstring[:search.start() + description_start+insert_pos]+a+"\n\n"+docstring[search.start() + description_start+insert_pos:]
-                docstring=docstring.replace('\n\n\n','\n\n')
-                docstring = docstring.replace('\n\n\n','\n\n')
+                docstring = docstring[:search.start() + description_start+insert_pos]+"\n\n"+a+"\n\n"+docstring[search.start() + description_start+insert_pos:]
 
 
         wrapped.__doc__ = docstring
