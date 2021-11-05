@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
     name='deprecat',
-    version='1.1.0',
+    version='2.0.0',
     url='https://github.com/deprecat/deprecat',
     download_url='https://github.com/deprecat/deprecat/archive/refs/tags/v1.1.0.tar.gz',
     license='MIT',
