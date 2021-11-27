@@ -171,13 +171,12 @@ class SphinxAdapter(ClassicAdapter):
                     insert_pos = len(params_section[description_start:])
                 
                 #finally we store the warning fmt string
+                version_msg = ""
                 if self.deprecated_args[arg]['version']!="":
-                    #the spaces are specifically cherrypicked for numpydoc docstrings
-                    fmt = "\n\n{indent}    .. admonition:: Deprecated\n      :class: warning\n\n      Parameter {arg} deprecated since {version}"
-                    div_lines = [fmt.format(version=self.deprecated_args[arg]['version'],arg=arg,indent =indent)]
-                else:
-                    fmt = "\n\n{indent}    .. admonition:: Deprecated\n      :class: warning\n\n      Parameter {arg} deprecated"
-                    div_lines = [fmt.format(version=self.deprecated_args[arg]['version'],arg=arg,indent =indent)]
+                    version_msg = f" since {self.deprecated_args[arg]['version']}"
+                #the spaces are specifically cherrypicked for numpydoc docstrings
+                fmt = "\n\n{indent}    .. admonition:: Deprecated\n{indent}      :class: warning\n\n{indent}      Parameter {arg} deprecated{version_msg}"
+                div_lines = [fmt.format(version_msg=version_msg,arg=arg,indent =indent)]
                 width = 2**16
                 
                 #formatting warning message
