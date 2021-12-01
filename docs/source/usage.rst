@@ -171,6 +171,4 @@ This is the output we get when we try to run ``multiply(a=1,b=2,c=3)``
 
 Examples
 --------
-`Check here for live examples <https://deprecat.readthedocs.io/en/latest/source/usage.html#docstring>`__
-
-https://deprecat.readthedocs.io/en/latest/source/api.html#examples
+`Check here for live examples <https://deprecat.readthedocs.io/en/latest/source/api.html#examples>`__
