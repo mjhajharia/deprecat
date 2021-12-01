@@ -169,32 +169,8 @@ This is the output we get when we try to run ``multiply(a=1,b=2,c=3)``
   
   6
 
-Docstring
----------
+Examples
+--------
+`Check here for live examples <https://deprecat.readthedocs.io/en/latest/source/usage.html#docstring>`__
 
-Now, the cool part is your docstring (``multiply.__doc__``) get's modified as well. This is how it renders in Sphinx:
-
-  Compute the product
-
-  Parameters
-  ----------
-  a: float
-      a is a nice number
-
-      .. admonition:: Deprecated
-        :class: warning
-
-        Parameter a deprecated since 4.0
-        (nothing)
-
-  b: float
-      b is also a nice number
-
-      .. admonition:: Deprecated
-        :class: warning
-
-        Parameter b deprecated since 3.0
-        (something)
-
-  c: float
-      c is ok too
+https://deprecat.readthedocs.io/en/latest/source/api.html#examples

@@ -17,6 +17,7 @@ import re
 import textwrap
 import functools
 import wrapt
+import warnings
 
 from deprecat.classic import ClassicAdapter
 from deprecat.classic import deprecat as _classic_deprecat
@@ -138,69 +139,75 @@ class SphinxAdapter(ClassicAdapter):
             docstring += "".join("{}\n".format(line) for line in div_lines)
 
         else:
+            if docstring=="\n":
+                warnings.warn("Missing docstring, consider adding a numpydoc style docstring for the decorator to work (Sphinx directive won't be added)" , category=UserWarning, stacklevel=_class_stacklevel)
+            else:
+                for arg in set(self.deprecated_args.keys()):
+                    #first we search for the location of the parameters section
+                    search = re.search("Parameters[\s]*\n[\s]*----------", docstring)
+                    if search is None:
+                        warnings.warn("Missing Parameter section, consider adding a numpydoc style parameters section in your docstring for the decorator to work (Sphinx directive won't be added)" , category=UserWarning, stacklevel=_class_stacklevel)
+                    else:
+                        params_string = docstring[search.start():search.end()]
 
-            for arg in set(self.deprecated_args.keys()):
-                #first we search for the location of the parameters section
-                search = re.search("Parameters[\s]*\n[\s]*----------", docstring)
-                params_string = docstring[search.start():search.end()]
+                        #we store the indentation of the values 
+                        indentsize = re.search("----------", params_string).start() - re.search("Parameters[\s]*\n", params_string).end()
+                        indent = ' '*indentsize
 
-                #we store the indentation of the values 
-                indentsize = re.search("----------", params_string).start() - re.search("Parameters[\s]*\n", params_string).end()
-                indent = ' '*indentsize
+                        # we check if there is another section after parameters
+                        if re.search(f"\n{indent}-----", docstring[search.end():]) is not None:
+                            #if yes then we find the range of the parameters section
+                            params_section_end = search.end() + re.search(f"\n{indent}-----", docstring[search.end():]).start()
+                            dashes_in_next_section = docstring[params_section_end:].count('-')
+                            params_section_end = params_section_end - dashes_in_next_section
+                            params_section = docstring[search.start():params_section_end]
+                        else:
+                            #else the entire remaining docstring is in the parameters section
+                            params_section = docstring[search.start():]
 
-                # we check if there is another section after parameters
-                if re.search(f"\n{indent}-----", docstring[search.end():]) is not None:
-                    #if yes then we find the range of the parameters section
-                    params_section_end = search.end() + re.search(f"\n{indent}-----", docstring[search.end():]).start()
-                    dashes_in_next_section = docstring[params_section_end:].count('-')
-                    params_section_end = params_section_end - dashes_in_next_section
-                    params_section = docstring[search.start():params_section_end]
-                else:
-                    #else the entire remaining docstring is in the parameters section
-                    params_section = docstring[search.start():]
+                        #we search for the description of the particular parameter we care about
+                        if re.search(f"\n{indent}{arg}\s*:", params_section) is not None:
+                            description_start = re.search(f"\n{indent}{arg}\s*:", params_section).end()
+                            #we check whether there are more parameters after this one, or if its the last parameter described in the secion
+                            #and store the position where we insert the warning
 
-                #we search for the description of the particular parameter we care about
-                description_start = re.search(f"\n{indent}{arg}\s*:", params_section).end()
+                            if re.search(f"\n{indent}\S", params_section[description_start:]):
+                                insert_pos = re.search(f"\n{indent}\S", params_section[description_start:]).start()
+                            else:
+                                insert_pos = len(params_section[description_start:])
+                            
+                            #finally we store the warning fmt string
+                            if self.deprecated_args[arg]['version']!="":
+                                #the spaces are specifically cherrypicked for numpydoc docstrings
+                                fmt = "\n\n    .. admonition:: Deprecated\n      :class: warning\n\n      Parameter {arg} deprecated since {version}"
+                                div_lines = [fmt.format(version=self.deprecated_args[arg]['version'],arg=arg)]
+                            else:
+                                fmt = "\n\n    .. admonition:: Deprecated\n      :class: warning\n\n      Parameter {arg} deprecated"
+                                div_lines = [fmt.format(version=self.deprecated_args[arg]['version'],arg=arg)]
+                            width = 2**16
+                            reason = textwrap.dedent(self.reason).strip()
+                            #formatting for docstring
+                            for paragraph in reason.splitlines():
+                                if paragraph:
+                                    div_lines.extend(
+                                        textwrap.fill(
+                                            paragraph,
+                                            width=width,
+                                            initial_indent=indent,
+                                            subsequent_indent=indent,
+                                        ).splitlines()
+                                    )
+                                else:
+                                    div_lines.append("")
 
-                #we check whether there are more parameters after this one, or if its the last parameter described in the secion
-                #and store the position where we insert the warning
-
-                if re.search(f"\n{indent}\S", params_section[description_start:]):
-                    insert_pos = re.search(f"\n{indent}\S", params_section[description_start:]).start()
-                else:
-                    insert_pos = len(params_section[description_start:])
-                
-                #finally we store the warning fmt string
-                if self.deprecated_args[arg]['version']!="":
-                    #the spaces are specifically cherrypicked for numpydoc docstrings
-                    fmt = "\n\n{indent}    .. admonition:: Deprecated\n      :class: warning\n\n      Parameter {arg} deprecated since {version}"
-                    div_lines = [fmt.format(version=self.deprecated_args[arg]['version'],arg=arg,indent =indent)]
-                else:
-                    fmt = "\n\n{indent}    .. admonition:: Deprecated\n      :class: warning\n\n      Parameter {arg} deprecated"
-                    div_lines = [fmt.format(version=self.deprecated_args[arg]['version'],arg=arg,indent =indent)]
-                width = 2**16
-                
-                #formatting warning message
-                if self.deprecated_args[arg]['reason']:
-                    reason = self.deprecated_args[arg]['reason']
-                    reason = textwrap.dedent(reason).strip()
-                    divlines += f'({reason})'
-#                     for paragraph in reason.splitlines():
-#                         if paragraph:
-#                             div_lines.extend(
-#                                 textwrap.fill(
-#                                     paragraph,
-#                                     width=width,
-#                                     initial_indent=indent+'      ',
-#                                     subsequent_indent=indent,
-#                                 ).splitlines()
-#                             )
-#                         else:
-#                             div_lines.append("")
-                       
-                a = "".join("{}\n".format(line) for line in div_lines)
-                docstring = docstring[:search.start() + description_start+insert_pos]+"\n\n"+a+"\n\n"+docstring[search.start() + description_start+insert_pos:]
-
+                            # -- append the directive division to the docstring
+                            a=''
+                            a += "".join("{}\n".format(line) for line in div_lines)
+                            a = textwrap.indent(a, indent)
+                            docstring = docstring[:search.start() + description_start+insert_pos]+"\n\n"+a+"\n\n"+docstring[search.start() + description_start+insert_pos:]
+                            docstring = re.sub(r"[\n]{3,}", "\n\n", docstring)
+                        else:
+                            warnings.warn(f"Missing description for parameter {arg}, consider adding a numpydoc style description for the decorator to work (Sphinx directive won't be added)" , category=UserWarning, stacklevel=_class_stacklevel)
 
         wrapped.__doc__ = docstring
         if self.directive in {"versionadded", "versionchanged"}:

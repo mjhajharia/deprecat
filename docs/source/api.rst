@@ -13,3 +13,6 @@ This part of the documentation covers all the interfaces of the Deprecated Libra
 
 .. automodule:: deprecat.sphinx
    :members:
+
+.. automodule:: deprecat.example
+   :members:
