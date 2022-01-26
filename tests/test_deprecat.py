@@ -19,6 +19,7 @@ _PARAMS = [
     ((), {'version': '1.2.3'}),
     ((), {'action': 'once'}),
     ((), {'category': MyDeprecationWarning}),
+    ((), {'deprecated_args': {'a':{'version':'4.0','reason':'nothing'}}})
 ]
 
 
@@ -27,7 +28,7 @@ def classic_deprecat_function(request):
     if request.param is None:
 
         @deprecat.classic.deprecat
-        def foo1():
+        def foo1(a=3, b=4):
             pass
 
         return foo1
@@ -39,7 +40,6 @@ def classic_deprecat_function(request):
             pass
 
         return foo1
-
 
 @pytest.fixture(scope="module", params=_PARAMS)
 def classic_deprecat_class(request):
@@ -88,7 +88,7 @@ def classic_deprecat_static_method(request):
         class Foo4(object):
             @staticmethod
             @deprecat.classic.deprecat
-            def foo4():
+            def foo4(a=3, b=4):
                 pass
 
         return Foo4.foo4
@@ -98,7 +98,7 @@ def classic_deprecat_static_method(request):
         class Foo4(object):
             @staticmethod
             @deprecat.classic.deprecat(*args, **kwargs)
-            def foo4():
+            def foo4(a=3,b=4):
                 pass
 
         return Foo4.foo4
@@ -111,7 +111,7 @@ def classic_deprecat_class_method(request):
         class Foo5(object):
             @classmethod
             @deprecat.classic.deprecat
-            def foo5(cls):
+            def foo5(cls, a=3, b=4):
                 pass
 
         return Foo5
@@ -121,7 +121,7 @@ def classic_deprecat_class_method(request):
         class Foo5(object):
             @classmethod
             @deprecat.classic.deprecat(*args, **kwargs)
-            def foo5(cls):
+            def foo5(cls,a=3,b=4):
                 pass
 
         return Foo5
@@ -258,3 +258,44 @@ def test_respect_global_filter():
         fun()
         fun()
     assert len(warns) == 1
+
+
+def test_deprecated_arg_warn_function():
+    @deprecat.classic.deprecat(deprecated_args={'a':{'version':'4.0','reason':'nothing'}})
+    def foo(a,b):
+        pass
+
+    with warnings.catch_warnings(record=True) as warns:
+        foo(a=2,b=3)
+    warn = warns[0]
+    assert 'Call to deprecated Parameter a. (nothing) -- Deprecated since v4.0.' in str(warn.message)
+
+def test_deprecated_arg_warn_class_method():
+
+    class Foo5(object):
+        @classmethod
+        @deprecat.classic.deprecat(deprecated_args={'a':{'version':'4.0','reason':'nothing'}})
+        def foo5(cls, a, b):
+            pass
+
+    with warnings.catch_warnings(record=True) as warns:
+        Foo5.foo5(a=3, b=4)
+        foo_cls(a=3,b=4)
+
+    warn = warns[0]
+    assert 'Call to deprecated Parameter a. (nothing) -- Deprecated since v4.0.' in str(warn.message)
+
+def test_deprecated_arg_warn_class_init():
+
+    @deprecat.classic.deprecat(deprecated_args={'a':{'version':'4.0','reason':'nothing'}})
+    class foo_cls:
+        pass
+        
+        def __init__(self,a,b):
+            pass
+
+    with warnings.catch_warnings(record=True) as warns:
+        foo_cls(a=3,b=4)
+
+    warn = warns[0]
+    assert 'Call to deprecated Parameter a. (nothing) -- Deprecated since v4.0.' in str(warn.message)

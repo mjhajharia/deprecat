@@ -22,6 +22,21 @@ import warnings
 from deprecat.classic import ClassicAdapter
 from deprecat.classic import deprecat as _classic_deprecat
 
+try:
+    # If the C extension for wrapt was compiled and wrapt/_wrappers.pyd exists, then the
+    # stack level that should be passed to warnings.warn should be 2. However, if using
+    # a pure python wrapt, a extra stacklevel is required.
+    import wrapt._wrappers
+
+    _routine_stacklevel = 2
+    _class_stacklevel = 2
+except ImportError:
+    _routine_stacklevel = 3
+    if platform.python_implementation() == "PyPy":
+        _class_stacklevel = 2
+    else:
+        _class_stacklevel = 3
+        
 class SphinxAdapter(ClassicAdapter):
 
     """

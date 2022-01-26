@@ -337,6 +337,81 @@ def test_warning_msg_has_version():
     warn = warns[0]
     assert version in str(warn.message)
 
+def test_deprecated_arg_warn_class_method():
+
+    class Foo5(object):
+        @classmethod
+        @deprecat.sphinx.deprecat(deprecated_args={'a':{'version':'4.0','reason':'nothing'}})
+        def foo5(cls, a, b):
+            pass
+
+    with warnings.catch_warnings(record=True) as warns:
+        Foo5.foo5(a=3, b=4)
+        foo_cls(a=3,b=4)
+
+    warn = warns[0]
+    assert 'Call to deprecated Parameter a. (nothing) -- Deprecated since v4.0.' in str(warn.message)
+
+def test_deprecated_arg_warn_class_init():
+
+    @deprecat.sphinx.deprecat(deprecated_args={'a':{'version':'4.0','reason':'nothing'}})
+    class foo_cls:
+        pass
+        
+        def __init__(self,a,b):
+            pass
+
+    with warnings.catch_warnings(record=True) as warns:
+        foo_cls(a=3,b=4)
+
+    warn = warns[0]
+    assert 'Call to deprecated Parameter a. (nothing) -- Deprecated since v4.0.' in str(warn.message)
+
+def test_deprecated_arg_warn_function_docstring():
+    @deprecat.sphinx.deprecat(deprecated_args={'a':{'version':'4.0','reason':'nothing'}})
+    def foo(x,a,b):
+        """
+        Parameters
+        ----------
+        x : int 
+            [description]
+        a : int
+            [description]
+        b : int
+            [description]
+        """
+        pass
+
+    expected_new_docstring = "\nParameters\n----------\nx : int \n    [description]\na : int\n    [description]\n\n    .. admonition:: Deprecated\n      :class: warning\n\n      Parameter a deprecated since 4.0\n\nb : int\n    [description]\n\n"
+    assert foo.__doc__ == expected_new_docstring
+
+def test_deprecated_arg_warn_class_docstring():
+
+    @deprecat.sphinx.deprecat(deprecated_args={'a':{'version':'4.0','reason':'nothing'}})
+    class foo_cls:
+        pass
+    
+    class Foo5(object):
+
+        @classmethod
+        @deprecat.classic.deprecat(deprecated_args={'a':{'version':'4.0','reason':'nothing'}})
+        def foo5(cls, x, a, b):
+            """
+            Parameters
+            ----------
+            x : int 
+                [description]
+            a : int
+                [description]
+            b : int
+                [description]
+            """
+            pass
+    
+    expected_new_docstring = "\nParameters\n----------\nx : int \n    [description]\na : int\n    [description]\n\n    .. admonition:: Deprecated\n      :class: warning\n\n      Parameter a deprecated since 4.0\n\nb : int\n    [description]\n\n"
+
+    assert foo_cls.__doc__ == expected_new_docstring
+    assert Foo5.foo5.__doc__ == expected_new_docstring
 
 def test_warning_is_ignored():
     @deprecat.sphinx.deprecat(version="4.5.6", action='ignore')
