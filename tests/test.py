@@ -7,7 +7,7 @@ import deprecat
 def test_deprecat_has_docstring():
     # The deprecat package must have a docstring
     assert deprecat.__doc__ is not None
-    assert "deprecat Library" in deprecat.__doc__
+    assert "deprecat" in deprecat.__doc__
 
 
 def test_deprecat_has_version():
