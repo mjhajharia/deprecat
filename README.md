@@ -1,6 +1,6 @@
 [![Documentation Status](https://readthedocs.org/projects/deprecat/badge/?version=latest)](https://deprecat.readthedocs.io/en/latest/?badge=latest)
 
-# deprecat Decorator
+# deprecat decorator
 
 Python ``@deprecat`` decorator to deprecate old python classes, functions or methods.
 
