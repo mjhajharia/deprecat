@@ -104,7 +104,7 @@ def test_sphinx_adapter__empty_docstring(directive):
     [
         (versionadded, "versionadded"),
         (versionchanged, "versionchanged"),
-        (deprecated, "deprecates"),
+        (deprecated, "deprecated"),
     ],
 )
 def test_decorator_accept_line_length(decorator_factory, directive):
