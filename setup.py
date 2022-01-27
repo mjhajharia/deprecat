@@ -5,9 +5,9 @@ from setuptools import setup
 
 setup(
     name='deprecat',
-    version='2.1.0',
+    version='2.1.1',
     url='https://github.com/deprecat/deprecat',
-    download_url='https://github.com/deprecat/deprecat/archive/refs/tags/v2.1.0.tar.gz',
+    download_url='https://github.com/deprecat/deprecat/archive/refs/tags/v2.1.1.tar.gz',
     license='MIT',
     author='Meenal Jhajharia',  
     author_email='meenal@mjhajharia.com',
@@ -26,12 +26,6 @@ setup(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
@@ -48,13 +42,7 @@ setup(
             'PyTest-Cov < 2.6   ; python_version < "3.6"',
             'bump2version < 1',
             'sphinx < 2',
-            # Python 2.7 EOL:
-            'importlib-metadata < 3       ; python_version < "3"',
-            'importlib-resources < 4      ; python_version < "3"',
-            'configparser < 5             ; python_version < "3"',
-            'sphinxcontrib-websupport < 2 ; python_version < "3"',
-            'zipp < 2                     ; python_version < "3"',
         ]
     },
-    python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*',
+    python_requires='>=3.6',
 )
