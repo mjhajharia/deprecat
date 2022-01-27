@@ -9,6 +9,11 @@ Python ``@deprecat`` decorator to deprecate old python classes, functions or met
 ```shell
 pip install deprecat
 ```
+
+## Compatibility
+
+Python >=3.6
+
 ## Usage
 
 Deprecated function
