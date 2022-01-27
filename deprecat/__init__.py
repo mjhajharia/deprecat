@@ -6,7 +6,7 @@ deprecat
 
 """
 
-__version__ = "2.1.0"
+__version__ = "2.1.1"
 __author__ = u"Meenal Jhajharia <meenal@mjhajharia.com>"
 __credits__ = "(c) Meenal Jhajharia"
 
