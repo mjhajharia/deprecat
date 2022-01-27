@@ -159,14 +159,14 @@ class SphinxAdapter(ClassicAdapter):
             else:
                 for arg in set(self.deprecated_args.keys()):
                     #first we search for the location of the parameters section
-                    search = re.search("Parameters[\s]*\n[\s]*----------", docstring)
+                    search = re.search("Parameters[\\s]*\n[\\s]*----------", docstring)
                     if search is None:
                         warnings.warn("Missing Parameter section, consider adding a numpydoc style parameters section in your docstring for the decorator to work (Sphinx directive won't be added)" , category=UserWarning, stacklevel=_class_stacklevel)
                     else:
                         params_string = docstring[search.start():search.end()]
 
                         #we store the indentation of the values 
-                        indentsize = re.search("----------", params_string).start() - re.search("Parameters[\s]*\n", params_string).end()
+                        indentsize = re.search("----------", params_string).start() - re.search("Parameters[\\s]*\n", params_string).end()
                         indent = ' '*indentsize
 
                         # we check if there is another section after parameters
@@ -181,13 +181,13 @@ class SphinxAdapter(ClassicAdapter):
                             params_section = docstring[search.start():]
 
                         #we search for the description of the particular parameter we care about
-                        if re.search(f"\n{indent}{arg}\s*:", params_section) is not None:
-                            description_start = re.search(f"\n{indent}{arg}\s*:", params_section).end()
+                        if re.search(f"\n{indent}{arg}\\s*:", params_section) is not None:
+                            description_start = re.search(f"\n{indent}{arg}\\s*:", params_section).end()
                             #we check whether there are more parameters after this one, or if its the last parameter described in the secion
                             #and store the position where we insert the warning
 
-                            if re.search(f"\n{indent}\S", params_section[description_start:]):
-                                insert_pos = re.search(f"\n{indent}\S", params_section[description_start:]).start()
+                            if re.search(f"\n{indent}\\S", params_section[description_start:]):
+                                insert_pos = re.search(f"\n{indent}\\S", params_section[description_start:]).start()
                             else:
                                 insert_pos = len(params_section[description_start:])
                             
@@ -257,8 +257,8 @@ class SphinxAdapter(ClassicAdapter):
         
         #remember the msg variable is a dict
         if msg:
-            for key in msg.keys():
-                msg[key] = re.sub(r"(?: : [a-zA-Z]+ )? : [a-zA-Z]+ : (`[^`]*`)", r"\1", msg[key], flags=re.X)
+            for key, value in msg.items():
+                msg[key] = re.sub(r"(?: : [a-zA-Z]+ )? : [a-zA-Z]+ : (`[^`]*`)", r"\1", value, flags=re.X)
                 
         return msg
 
@@ -326,7 +326,7 @@ def versionchanged(reason="", version="", line_length=70):
     return adapter
 
 
-def deprecat(reason="", version="", line_length=70, deprecated_args=None, **kwargs):
+def deprecat(reason="", directive="deprecated", version="", line_length=70, deprecated_args=None, **kwargs):
     """
     This decorator can be used to insert a "deprecated" directive
     in your function/class docstring in order to documents the

@@ -69,7 +69,7 @@ def test_class_deprecation_using_a_simple_decorator():
         old_new = wrapped_cls.__new__
 
         def wrapped_new(unused, *args, **kwargs):
-            print(u"I am deprecate!", file=stream)
+            print(u"I am deprecated!", file=stream)
             return old_new(*args, **kwargs)
 
         wrapped_cls.__new__ = classmethod(wrapped_new)

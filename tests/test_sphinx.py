@@ -18,7 +18,6 @@ import deprecat.sphinx
         """This function adds *x* and *y*.""",
         """
         This function adds *x* and *y*.
-
         :param x: number *x*
         :param y: number *y*
         :return: sum = *x* + *y*
@@ -29,10 +28,15 @@ import deprecat.sphinx
 def docstring(request):
     return request.param
 
-
-@pytest.fixture(scope="module", params=['versionadded', 'versionchanged', 'deprecated'])
+@pytest.fixture(scope="module", params=['versionadded', 'versionchanged', 'deprecat'])
 def directive(request):
     return request.param
+
+@pytest.fixture(scope="module")
+def sphinx_directive(directive):
+    mapping = {'versionadded':'versionadded','versionchanged':'versionchanged','deprecat':'deprecated'}
+    return mapping[directive]
+
 
 
 # noinspection PyShadowingNames
@@ -61,7 +65,7 @@ def directive(request):
     ],
     ids=["reason&version", "version"],
 )
-def test_has_sphinx_docstring(docstring, directive, reason, version, expected):
+def test_has_sphinx_docstring(docstring, directive, sphinx_directive, reason, version, expected):
     # The function:
     def foo(x, y):
         return x + y
@@ -74,8 +78,8 @@ def test_has_sphinx_docstring(docstring, directive, reason, version, expected):
     decorator = decorator_factory(reason=reason, version=version)
     foo = decorator(foo)
 
-    # The function must contains this Sphinx docstring:
-    expected = expected.format(directive=directive, version=version, reason=reason)
+    # The function must contain this Sphinx docstring:
+    expected = expected.format(directive=sphinx_directive, version=version, reason=reason)
 
     current = textwrap.dedent(foo.__doc__)
     assert current.endswith(expected)
@@ -128,7 +132,7 @@ def test_has_sphinx_docstring(docstring, directive, reason, version, expected):
     ],
     ids=["reason&version", "version"],
 )
-def test_cls_has_sphinx_docstring(docstring, directive, reason, version, expected):
+def test_cls_has_sphinx_docstring(docstring, directive, sphinx_directive, reason, version, expected):
     # The class:
     class Foo(object):
         pass
@@ -142,7 +146,7 @@ def test_cls_has_sphinx_docstring(docstring, directive, reason, version, expecte
     Foo = decorator(Foo)
 
     # The class must contain this Sphinx docstring:
-    expected = expected.format(directive=directive, version=version, reason=reason)
+    expected = expected.format(directive=sphinx_directive, version=version, reason=reason)
 
     current = textwrap.dedent(Foo.__doc__)
     assert current.endswith(expected)
@@ -347,8 +351,8 @@ def test_deprecated_arg_warn_class_method():
 
     with warnings.catch_warnings(record=True) as warns:
         Foo5.foo5(a=3, b=4)
-        foo_cls(a=3,b=4)
-
+        
+    assert len(warns) == 1
     warn = warns[0]
     assert 'Call to deprecated Parameter a. (nothing) -- Deprecated since v4.0.' in str(warn.message)
 
@@ -385,16 +389,12 @@ def test_deprecated_arg_warn_function_docstring():
     expected_new_docstring = "\nParameters\n----------\nx : int \n    [description]\na : int\n    [description]\n\n    .. admonition:: Deprecated\n      :class: warning\n\n      Parameter a deprecated since 4.0\n\nb : int\n    [description]\n\n"
     assert foo.__doc__ == expected_new_docstring
 
-def test_deprecated_arg_warn_class_docstring():
-
-    @deprecat.sphinx.deprecat(deprecated_args={'a':{'version':'4.0','reason':'nothing'}})
-    class foo_cls:
-        pass
+def test_deprecated_arg_warn_class_method_docstring():
     
     class Foo5(object):
 
         @classmethod
-        @deprecat.classic.deprecat(deprecated_args={'a':{'version':'4.0','reason':'nothing'}})
+        @deprecat.sphinx.deprecat(deprecated_args={'a':{'version':'4.0','reason':'nothing'}})
         def foo5(cls, x, a, b):
             """
             Parameters
@@ -410,7 +410,6 @@ def test_deprecated_arg_warn_class_docstring():
     
     expected_new_docstring = "\nParameters\n----------\nx : int \n    [description]\na : int\n    [description]\n\n    .. admonition:: Deprecated\n      :class: warning\n\n      Parameter a deprecated since 4.0\n\nb : int\n    [description]\n\n"
 
-    assert foo_cls.__doc__ == expected_new_docstring
     assert Foo5.foo5.__doc__ == expected_new_docstring
 
 def test_warning_is_ignored():
@@ -489,5 +488,5 @@ def test_sphinx_syntax_trimming(reason, expected):
 )
 def test_get_deprecat_msg(reason, expected):
     adapter = deprecat.sphinx.SphinxAdapter("deprecated", reason=reason, version="1")
-    actual = adapter.get_deprecat_msg(lambda: None, None)
-    assert expected in actual
+    actual = adapter.get_deprecated_msg(lambda: None, None, None)
+    assert expected in list(actual.values())[0]

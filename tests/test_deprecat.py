@@ -19,7 +19,6 @@ _PARAMS = [
     ((), {'version': '1.2.3'}),
     ((), {'action': 'once'}),
     ((), {'category': MyDeprecationWarning}),
-    ((), {'deprecated_args': {'a':{'version':'4.0','reason':'nothing'}}})
 ]
 
 
@@ -279,7 +278,6 @@ def test_deprecated_arg_warn_class_method():
 
     with warnings.catch_warnings(record=True) as warns:
         Foo5.foo5(a=3, b=4)
-        foo_cls(a=3,b=4)
 
     warn = warns[0]
     assert 'Call to deprecated Parameter a. (nothing) -- Deprecated since v4.0.' in str(warn.message)
