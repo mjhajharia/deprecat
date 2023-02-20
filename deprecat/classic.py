@@ -44,6 +44,9 @@ class ClassicAdapter(wrapt.AdapterFactory):
     version: str
         Version of your project which deprecates this method or class.
     
+    remove_version: str
+        Version of your project which removes this method or class.
+
     action: str
         A warning filter used to specify the deprecation warning.
         Can be one of "error", "ignore", "always", "default", "module", or "once".
@@ -60,9 +63,10 @@ class ClassicAdapter(wrapt.AdapterFactory):
 
     """
 
-    def __init__(self, reason="", version="", action=None, deprecated_args=None, category=DeprecationWarning):
-        self.reason = reason or ""
-        self.version = version or ""
+    def __init__(self, reason="", version="", remove_version="", action=None, deprecated_args=None, category=DeprecationWarning):
+        self.reason = reason
+        self.version = version
+        self.remove_version = remove_version
         self.action = action
         self.category = category
         self.deprecated_args = deprecated_args
@@ -99,14 +103,18 @@ class ClassicAdapter(wrapt.AdapterFactory):
             else:
                 fmt = "Call to deprecated method {name}."
 
+
         if self.deprecated_args is None:
             name = wrapped.__name__
-            if self.reason:
+            if self.reason != "":
                 fmt += " ({reason})"
-            if self.version:
-                fmt += " -- Deprecated since version {version}."
+            if self.version != "":
+                fmt += "\n-- Deprecated since version {version}."
+            
+            if self.remove_version != "":
+                fmt += "\n-- Will be removed in version {remove_version}."
 
-            return {f'{name}': fmt.format(name=name, reason=self.reason or "", version=self.version or "")}
+            return {f'{name}': fmt.format(name=name, reason=self.reason, version=self.version, remove_version=self.remove_version)}
 
 
         if self.deprecated_args is not None:                
@@ -117,11 +125,20 @@ class ClassicAdapter(wrapt.AdapterFactory):
                 for arg in self.argstodeprecate:
                     name = arg
                     fmt = "Call to deprecated Parameter {name}."
-                    if self.deprecated_args[arg]['reason']:
-                        fmt += " ({reason})"
-                    if self.deprecated_args[arg]['version']:
-                        fmt += " -- Deprecated since v{version}."
-                    warningargs[arg] = fmt.format(name=name, reason=self.deprecated_args[arg]['reason'] or "", version=self.deprecated_args[arg]['version'] or "")
+                    r=''
+                    v=''
+                    rv=''
+                    if self.deprecated_args[arg].get('reason') is not None:
+                        r = self.deprecated_args[arg]['reason']
+                        fmt += " {reason}"
+                    if self.deprecated_args[arg].get('version') is not None:
+                        v = self.deprecated_args[arg]['version']
+                        fmt += "\n-- Deprecated since v{version}."
+                    if self.deprecated_args[arg].get('remove_version') is not None:
+                        rv = self.deprecated_args[arg]['remove_version']
+                        fmt += "\n-- Will be removed in version {remove_version}."
+
+                    warningargs[arg] = fmt.format(name=name, reason=r, version=v, remove_version=rv)
             else:
                 name=""
 

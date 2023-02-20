@@ -12,10 +12,10 @@ import warnings
 
 from deprecat.sphinx import deprecat
 
-@deprecat(reason="useless", version = 2.0)
+@deprecat(reason="useless", version = "2.0")
 class test_deprecat_on_class:
     """
-    Here we test deprecation on a class, like this one.
+    Here we test deprecation on a class, like this one. 
     """
     def __init__(self):
         pass
@@ -26,17 +26,20 @@ class test_deprecat_on_class_method:
     def __init__(self):
         pass
 
-    @deprecat(reason="useless", version = 2.0)
+    @deprecat(reason="useless", version = "2.0", remove_version = "3.0")
     def randomfunction(self, a, b):
         """
-        Here we test deprecation on a method of a class, like this one.
+        Here we test deprecation on a method of a class, like this one. 
+        Note that you can also add `remove_version` to the decorator 
+        to specify the version when the class/function/kwarg/feature will be removed.
+
         """
         return a + b
 
 x = test_deprecat_on_class_method()
 x.randomfunction(1,2)
 
-@deprecat(reason="useless", version = 2.0)
+@deprecat(reason="useless", version = "2.0")
 def test_deprecat_on_function(a, b):
     """
     Here we test deprecation on a function.

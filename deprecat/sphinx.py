@@ -51,6 +51,9 @@ class SphinxAdapter(ClassicAdapter):
     version: str
         Version of your project which deprecates this feature.
 
+    remove_version: str
+        Version of your project which removes this method or class.
+
     action: str
         A warning filter used to specify the deprecation warning.
         Can be one of "error", "ignore", "always", "default", "module", or "once".
@@ -97,6 +100,7 @@ class SphinxAdapter(ClassicAdapter):
         directive,
         reason="",
         version="",
+        remove_version="",
         action=None,
         category=DeprecationWarning,
         line_length=70,
@@ -105,7 +109,7 @@ class SphinxAdapter(ClassicAdapter):
         self.deprecated_args = deprecated_args
         self.directive = directive
         self.line_length = line_length
-        super(SphinxAdapter, self).__init__(reason=reason, version=version, action=action, category=category, deprecated_args=deprecated_args)
+        super(SphinxAdapter, self).__init__(reason=reason, version=version, remove_version=remove_version, action=action, category=category, deprecated_args=deprecated_args)
 
     def __call__(self, wrapped):
         """
@@ -130,7 +134,10 @@ class SphinxAdapter(ClassicAdapter):
             docstring = "\n"
 
         width = self.line_length - 3 if self.line_length > 3 else 2 ** 16
-        reason = textwrap.dedent(self.reason).strip()
+        reason=self.reason
+        if self.remove_version!="":
+            reason += f'\n\n Warning: This deprecated feature will be removed in version {self.remove_version}'
+        reason = textwrap.dedent(reason).strip()
 
         if self.deprecated_args is None:
             fmt = ".. {directive}:: {version}" if self.version else ".. {directive}::"
@@ -149,7 +156,6 @@ class SphinxAdapter(ClassicAdapter):
                     )
                 else:
                     div_lines.append("")
-
             # -- append the directive division to the docstring
             docstring += "".join("{}\n".format(line) for line in div_lines)
 
@@ -192,29 +198,31 @@ class SphinxAdapter(ClassicAdapter):
                                 insert_pos = len(params_section[description_start:])
                             
                             #finally we store the warning fmt string
-                            if self.deprecated_args[arg]['version']!="":
+                            if self.deprecated_args[arg].get('version') is not None:
                                 #the spaces are specifically cherrypicked for numpydoc docstrings
                                 fmt = "\n\n    .. admonition:: Deprecated\n      :class: warning\n\n      Parameter {arg} deprecated since {version}"
-                                div_lines = [fmt.format(version=self.deprecated_args[arg]['version'],arg=arg)]
+                                if self.deprecated_args[arg].get('remove_version') is not None:
+                                    fmt += " and will be removed in version {remove_version}."
+                                    div_lines = [fmt.format(version=self.deprecated_args[arg]['version'],arg=arg, remove_version=self.deprecated_args[arg]['remove_version'])]
+                                else:
+                                    div_lines = [fmt.format(version=self.deprecated_args[arg]['version'],arg=arg)]
                             else:
                                 fmt = "\n\n    .. admonition:: Deprecated\n      :class: warning\n\n      Parameter {arg} deprecated"
                                 div_lines = [fmt.format(version=self.deprecated_args[arg]['version'],arg=arg)]
                             width = 2**16
+                            if self.remove_version!="":
+                                self.reason += f'\n\n Warning: This deprecated feature will be removed in version {self.remove_version}'
                             reason = textwrap.dedent(self.reason).strip()
                             #formatting for docstring
                             for paragraph in reason.splitlines():
-                                if paragraph:
-                                    div_lines.extend(
-                                        textwrap.fill(
-                                            paragraph,
-                                            width=width,
-                                            initial_indent=indent,
-                                            subsequent_indent=indent,
-                                        ).splitlines()
-                                    )
-                                else:
-                                    div_lines.append("")
-
+                                div_lines.extend(
+                                    textwrap.fill(
+                                        paragraph,
+                                        width=width,
+                                        initial_indent=indent,
+                                        subsequent_indent=indent,
+                                    ).splitlines()
+                                )
                             # -- append the directive division to the docstring
                             a=''
                             a += "".join("{}\n".format(line) for line in div_lines)
@@ -326,7 +334,7 @@ def versionchanged(reason="", version="", line_length=70):
     return adapter
 
 
-def deprecat(reason="", directive="deprecated", version="", line_length=70, deprecated_args=None, **kwargs):
+def deprecat(reason="", directive="deprecated", version="", remove_version="", line_length=70, deprecated_args=None, **kwargs):
     """
     This decorator can be used to insert a "deprecated" directive
     in your function/class docstring in order to documents the
@@ -339,6 +347,9 @@ def deprecat(reason="", directive="deprecated", version="", line_length=70, depr
 
     version: str
         Version of your project which deprecates this method or class.
+
+    remove_version: str
+        Version of your project which removes this method or class.
 
     action: str
         A warning filter used to specify the deprecation warning.
@@ -369,6 +380,7 @@ def deprecat(reason="", directive="deprecated", version="", line_length=70, depr
     adapter_cls = kwargs.pop('adapter_cls', SphinxAdapter)
     kwargs["reason"] = reason
     kwargs["version"] = version
+    kwargs["remove_version"] = remove_version
     kwargs["line_length"] = line_length
     kwargs["deprecated_args"] = deprecated_args
 
