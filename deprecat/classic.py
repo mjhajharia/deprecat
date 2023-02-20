@@ -43,6 +43,9 @@ class ClassicAdapter(wrapt.AdapterFactory):
 
     version: str
         Version of your project which deprecates this method or class.
+
+    current_version: str
+        Current version of your project (for which documentation is being built).
     
     action: str
         A warning filter used to specify the deprecation warning.
@@ -60,9 +63,10 @@ class ClassicAdapter(wrapt.AdapterFactory):
 
     """
 
-    def __init__(self, reason="", version="", action=None, deprecated_args=None, category=DeprecationWarning):
-        self.reason = reason or ""
-        self.version = version or ""
+    def __init__(self, reason="", version="", current_version="inf", action=None, deprecated_args=None, category=DeprecationWarning):
+        self.reason = reason
+        self.version = version
+        self.current_version = current_version
         self.action = action
         self.category = category
         self.deprecated_args = deprecated_args
@@ -103,7 +107,9 @@ class ClassicAdapter(wrapt.AdapterFactory):
             name = wrapped.__name__
             if self.reason:
                 fmt += " ({reason})"
-            if self.version:
+            if float(self.current_version.replace(".", "")) < float(self.version.replace(".", "")):
+                fmt += " -- Will be deprecated in {version}."
+            else:
                 fmt += " -- Deprecated since version {version}."
 
             return {f'{name}': fmt.format(name=name, reason=self.reason or "", version=self.version or "")}
@@ -119,7 +125,10 @@ class ClassicAdapter(wrapt.AdapterFactory):
                     fmt = "Call to deprecated Parameter {name}."
                     if self.deprecated_args[arg]['reason']:
                         fmt += " ({reason})"
-                    if self.deprecated_args[arg]['version']:
+                    
+                    if float(self.current_version.replace(".", "")) < float(self.deprecated_args[arg]['version'].(".", "")):
+                        fmt += " -- Will be deprecated in v{version}."
+                    else:
                         fmt += " -- Deprecated since v{version}."
                     warningargs[arg] = fmt.format(name=name, reason=self.deprecated_args[arg]['reason'] or "", version=self.deprecated_args[arg]['version'] or "")
             else:

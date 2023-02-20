@@ -51,6 +51,9 @@ class SphinxAdapter(ClassicAdapter):
     version: str
         Version of your project which deprecates this feature.
 
+    current_version: str
+        Current version of your project (for which documentation is being built).
+
     action: str
         A warning filter used to specify the deprecation warning.
         Can be one of "error", "ignore", "always", "default", "module", or "once".
@@ -68,7 +71,7 @@ class SphinxAdapter(ClassicAdapter):
     line_length: numeric
         Max line length of the directive text. If non null, a long text is wrapped in several lines.
 
-    directive: {"versionadded", "versionchanged", "deprecated"}
+    directive: {"versionadded", "versionchanged", "deprecated", "deprecatedsoon"}
         Sphinx directive
 
     Notes
@@ -97,6 +100,7 @@ class SphinxAdapter(ClassicAdapter):
         directive,
         reason="",
         version="",
+        current_version="inf"
         action=None,
         category=DeprecationWarning,
         line_length=70,
@@ -105,7 +109,7 @@ class SphinxAdapter(ClassicAdapter):
         self.deprecated_args = deprecated_args
         self.directive = directive
         self.line_length = line_length
-        super(SphinxAdapter, self).__init__(reason=reason, version=version, action=action, category=category, deprecated_args=deprecated_args)
+        super(SphinxAdapter, self).__init__(reason=reason, version=version, current_version=current_version, action=action, category=category, deprecated_args=deprecated_args)
 
     def __call__(self, wrapped):
         """
@@ -193,6 +197,8 @@ class SphinxAdapter(ClassicAdapter):
                             
                             #finally we store the warning fmt string
                             if self.deprecated_args[arg]['version']!="":
+                                if float(self.current_version.replace(".", "")) < float(self.deprecated_args[arg]['version'].(".", "")):
+                                    fmt = "\n\n    .. admonition:: Deprecated Soon\n      :class: warning\n\n      Parameter {arg} will be deprecated in {version}"
                                 #the spaces are specifically cherrypicked for numpydoc docstrings
                                 fmt = "\n\n    .. admonition:: Deprecated\n      :class: warning\n\n      Parameter {arg} deprecated since {version}"
                                 div_lines = [fmt.format(version=self.deprecated_args[arg]['version'],arg=arg)]
@@ -275,7 +281,7 @@ def versionadded(reason="", version="", line_length=70):
         Reason for deprecation of this method or class.
 
     version: str
-        Version of your project which deprecates this method or class.
+        Version of your project which adds this method or class.
     
     line_length: numeric
         Max line length of the directive text. If non null, a long text is wrapped in several lines.
@@ -290,6 +296,7 @@ def versionadded(reason="", version="", line_length=70):
         'versionadded',
         reason=reason,
         version=version,
+        current_version=current_version,
         line_length=line_length,
     )
     return adapter
@@ -308,7 +315,7 @@ def versionchanged(reason="", version="", line_length=70):
         Reason for deprecation of this method or class.
 
     version: str
-        Version of your project which deprecates this method or class.
+        Version of your project which changes this method or class.
     
     line_length: numeric
         Max line length of the directive text. If non null, a long text is wrapped in several lines.
@@ -321,12 +328,13 @@ def versionchanged(reason="", version="", line_length=70):
         'versionchanged',
         reason=reason,
         version=version,
+        current_version=current_version
         line_length=line_length,
      )
     return adapter
 
 
-def deprecat(reason="", directive="deprecated", version="", line_length=70, deprecated_args=None, **kwargs):
+def deprecat(reason="", directive="deprecated", version="", curent_version="inf", line_length=70, deprecated_args=None, **kwargs):
     """
     This decorator can be used to insert a "deprecated" directive
     in your function/class docstring in order to documents the
@@ -339,6 +347,9 @@ def deprecat(reason="", directive="deprecated", version="", line_length=70, depr
 
     version: str
         Version of your project which deprecates this method or class.
+
+    current_version: str
+        Current version of your project (for which documentation is being built).
 
     action: str
         A warning filter used to specify the deprecation warning.
@@ -369,6 +380,7 @@ def deprecat(reason="", directive="deprecated", version="", line_length=70, depr
     adapter_cls = kwargs.pop('adapter_cls', SphinxAdapter)
     kwargs["reason"] = reason
     kwargs["version"] = version
+    kwargs["current_version"] = current_version
     kwargs["line_length"] = line_length
     kwargs["deprecated_args"] = deprecated_args
 

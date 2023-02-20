@@ -22,6 +22,17 @@ class test_deprecat_on_class:
 
 test_deprecat_on_class()
 
+@deprecat(reason="useless", version = 2.0, curent_version="1.0")
+class test_deprecat_on_class_for_future:
+    """
+    Here we test deprecation on a class, like this one. 
+    We wish to mark something for deprecation beforehand.
+    """
+    def __init__(self):
+        pass
+
+test_deprecat_on_class_for_future()
+
 class test_deprecat_on_class_method:
     def __init__(self):
         pass
