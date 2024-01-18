@@ -48,7 +48,7 @@ def test_deprecat_on_function(a, b):
 
 test_deprecat_on_function(1,2)
 
-@deprecat(deprecated_args={'a':{'version':'4.0','reason':'nothing'}})
+@deprecat(deprecated_args={'a':{'version':'4.0','reason':'nothing', 'remove_version': '5.0'}})
 def test_deprecated_args(a, b, c=3, d=4):
     """
     Here we test deprecation on a function with arguments.

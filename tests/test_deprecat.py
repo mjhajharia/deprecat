@@ -18,7 +18,8 @@ _PARAMS = [
     ((), {'reason': 'Good reason'}),
     ((), {'version': '1.2.3'}),
     ((), {'action': 'once'}),
-    ((), {'category': MyDeprecationWarning}),
+    ((), {'category': MyDeprecationWarning},),
+    ((), {'remove_version': '1.2.4'}),
 ]
 
 
@@ -223,6 +224,18 @@ def test_warning_msg_has_version():
     warn = warns[0]
     assert version in str(warn.message)
 
+def test_warning_msg_has_remove_version():
+    version = "1.2.3"
+    remove_version="1.2.4"
+
+    @deprecat.classic.deprecat(remove_version=remove_version)
+    def foo():
+        pass
+
+    with warnings.catch_warnings(record=True) as warns:
+        foo()
+    warn = warns[0]
+    assert remove_version in str(warn.message)
 
 def test_warning_is_ignored():
     @deprecat.classic.deprecat(action='ignore')
@@ -266,7 +279,19 @@ def test_deprecated_arg_warn_function():
     with warnings.catch_warnings(record=True) as warns:
         foo(a=2,b=3)
     warn = warns[0]
-    assert 'Call to deprecated Parameter a. (nothing) -- Deprecated since v4.0.' in str(warn.message)
+    assert "Call to deprecated Parameter a. nothing\n-- Deprecated since v4.0." in str(warn.message)
+
+def test_deprecated_arg_warn_function_remove_version():
+    @deprecat.classic.deprecat(deprecated_args={'a':{'version': '1.5', 'remove_version':'4.0', 'reason':'nothing'}})
+    def foo(a,b):
+        pass
+
+    with warnings.catch_warnings(record=True) as warns:
+        foo(a=2,b=3)
+    warn = warns[0]
+    print(warn.message)
+    assert "Call to deprecated Parameter a. nothing\n-- Deprecated since v1.5.\n-- Will be removed in version 4.0." in str(warn.message)
+    
 
 def test_deprecated_arg_warn_class_method():
 
@@ -280,7 +305,7 @@ def test_deprecated_arg_warn_class_method():
         Foo5.foo5(a=3, b=4)
 
     warn = warns[0]
-    assert 'Call to deprecated Parameter a. (nothing) -- Deprecated since v4.0.' in str(warn.message)
+    assert 'Call to deprecated Parameter a. nothing\n-- Deprecated since v4.0.' in str(warn.message)
 
 def test_deprecated_arg_warn_class_init():
 
@@ -295,4 +320,4 @@ def test_deprecated_arg_warn_class_init():
         foo_cls(a=3,b=4)
 
     warn = warns[0]
-    assert 'Call to deprecated Parameter a. (nothing) -- Deprecated since v4.0.' in str(warn.message)
+    assert 'Call to deprecated Parameter a. nothing\n-- Deprecated since v4.0.' in str(warn.message)

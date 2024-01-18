@@ -41,21 +41,20 @@ def sphinx_directive(directive):
 
 # noinspection PyShadowingNames
 @pytest.mark.parametrize(
-    "reason, version, expected",
+    "reason, version, remove_version, expected",
     [
         (
             'A good reason',
             '1.2.0',
+            '1.3.0',
             textwrap.dedent(
-                """\
-                .. {directive}:: {version}
-                   {reason}
-                """
+                "\n.. {directive}:: {version}\n  {reason}\n\n    Warning: This deprecated feature will be removed in version\n   {remove_version}\n"
             ),
         ),
         (
             None,
             '1.2.0',
+            None,
             textwrap.dedent(
                 """\
                 .. {directive}:: {version}
@@ -65,7 +64,7 @@ def sphinx_directive(directive):
     ],
     ids=["reason&version", "version"],
 )
-def test_has_sphinx_docstring(docstring, directive, sphinx_directive, reason, version, expected):
+def test_has_sphinx_docstring(docstring, directive, sphinx_directive, reason, version, remove_version, expected):
     # The function:
     def foo(x, y):
         return x + y
@@ -79,7 +78,7 @@ def test_has_sphinx_docstring(docstring, directive, sphinx_directive, reason, ve
     foo = decorator(foo)
 
     # The function must contain this Sphinx docstring:
-    expected = expected.format(directive=sphinx_directive, version=version, reason=reason)
+    expected = expected.format(directive=sphinx_directive, version=version, reason=reason, remove_version=remove_version)
 
     current = textwrap.dedent(foo.__doc__)
     assert current.endswith(expected)
@@ -108,21 +107,25 @@ def test_has_sphinx_docstring(docstring, directive, sphinx_directive, reason, ve
     sys.version_info < (3, 3), reason="Classes should have mutable docstrings -- resolved in python 3.3"
 )
 @pytest.mark.parametrize(
-    "reason, version, expected",
+    "reason, version, remove_version, expected",
     [
         (
             'A good reason',
             '1.2.0',
+            '1.3.0',
             textwrap.dedent(
                 """\
                 .. {directive}:: {version}
-                   {reason}
+                {reason}
+
+                 Warning: This deprecated feature will be removed in version {remove_version}
                 """
             ),
         ),
         (
             None,
             '1.2.0',
+            None,
             textwrap.dedent(
                 """\
                 .. {directive}:: {version}
@@ -132,7 +135,7 @@ def test_has_sphinx_docstring(docstring, directive, sphinx_directive, reason, ve
     ],
     ids=["reason&version", "version"],
 )
-def test_cls_has_sphinx_docstring(docstring, directive, sphinx_directive, reason, version, expected):
+def test_cls_has_sphinx_docstring(docstring, directive, sphinx_directive, reason, version, remove_version, expected):
     # The class:
     class Foo(object):
         pass
@@ -146,7 +149,7 @@ def test_cls_has_sphinx_docstring(docstring, directive, sphinx_directive, reason
     Foo = decorator(Foo)
 
     # The class must contain this Sphinx docstring:
-    expected = expected.format(directive=sphinx_directive, version=version, reason=reason)
+    expected = expected.format(directive=sphinx_directive, version=version, remove_version=remove_version, reason=reason)
 
     current = textwrap.dedent(Foo.__doc__)
     assert current.endswith(expected)
@@ -372,7 +375,7 @@ def test_deprecated_arg_warn_class_init():
     assert 'Call to deprecated Parameter a. (nothing) -- Deprecated since v4.0.' in str(warn.message)
 
 def test_deprecated_arg_warn_function_docstring():
-    @deprecat.sphinx.deprecat(deprecated_args={'a':{'version':'4.0','reason':'nothing'}})
+    @deprecat.sphinx.deprecat(deprecated_args={'a':{'version':'4.0','reason':'nothing', 'remove_version': '5.0'}})
     def foo(x,a,b):
         """
         Parameters
@@ -386,7 +389,7 @@ def test_deprecated_arg_warn_function_docstring():
         """
         pass
 
-    expected_new_docstring = "\nParameters\n----------\nx : int \n    [description]\na : int\n    [description]\n\n    .. admonition:: Deprecated\n      :class: warning\n\n      Parameter a deprecated since 4.0\n\nb : int\n    [description]\n\n"
+    expected_new_docstring = "\nParameters\n----------\nx : int \n    [description]\na : int\n    [description]\n\n    .. admonition:: Deprecated\n      :class: warning\n\n      Parameter a deprecated since 4.0 and will be removed in version 5.0.\n\nb : int\n    [description]\n\n"
     assert foo.__doc__ == expected_new_docstring
 
 def test_deprecated_arg_warn_class_method_docstring():

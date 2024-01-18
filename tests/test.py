@@ -1,6 +1,5 @@
 # coding: utf-8
-import pkg_resources
-
+from packaging import version
 import deprecat
 
 
@@ -13,6 +12,6 @@ def test_deprecat_has_docstring():
 def test_deprecat_has_version():
     # The deprecat package must have a valid version number
     assert deprecat.__version__ is not None
-    version = pkg_resources.parse_version(deprecat.__version__)
+    version_ = version.parse(deprecat.__version__)
 
-    assert 'Legacy' not in version.__class__.__name__
+    assert 'Legacy' not in version_.__class__.__name__
