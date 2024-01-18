@@ -11,7 +11,7 @@ Deprecated function
 
   from deprecat import deprecat
 
-  @deprecat(reason="this is a bad function", version = '2.0')
+  @deprecat(reason="this is a bad function", version = "2.0")
   def some_deprecated_function(x, y):
       return x+y
 
@@ -39,7 +39,7 @@ Deprecated method
       def __init__(self,value):
           self.value = value
 
-      @deprecat(reason="this is a bad method", version = 2.0)
+      @deprecat(reason="this is a bad method", version = "2.0")
       def some_deprecated_function(self):
           print(self.value)
 
@@ -68,7 +68,7 @@ Deprecated class
 
   from deprecat import deprecat
 
-  @deprecat(reason="useless", version = 2.0)
+  @deprecat(reason="useless", version = "2.0")
   class badclass:
       
       def __init__(self):
@@ -169,6 +169,35 @@ This is the output we get when we try to run ``multiply(a=1,b=2,c=3)``
   
   6
 
-Examples
---------
-`Check here for live examples <https://deprecat.readthedocs.io/en/latest/source/api.html#examples>`__
+Adding Removal Version 
+----------------------
+
+You can add a removal version to the deprecation warning by adding the ``removal_version`` parameter to the decorator. This will add a warning to the user that the function will be removed in the next versions.
+
+.. code-block:: python
+
+  from deprecat.sphinx import deprecat
+
+  @deprecat(reason="this is a bad function", version = "2.0", remove_version = "3.0")
+  def some_deprecated_function(x, y):
+      """
+      Parameters
+      ----------
+      x: float
+          x is a nice number
+      
+      y: float
+          y is also a nice number
+      """
+      return x+y
+
+This is the output we get when we try to run ``some_deprecated_function(x=2, y=3)``
+
+.. code-block:: sh
+
+  DeprecationWarning: Call to deprecated method randomfunction. useless
+  Warning: This deprecated feature will be removed in version 3.0 -- Deprecated since version 2.0. -- Will be removed in version 3.0.
+
+Live Examples
+-------------
+If you want to see the sphinx admonitions in action, `check this out <https://deprecat.readthedocs.io/en/latest/source/api.html#examples>`__
