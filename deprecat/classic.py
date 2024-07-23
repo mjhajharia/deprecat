@@ -130,7 +130,7 @@ class ClassicAdapter(wrapt.AdapterFactory):
                     rv=''
                     if self.deprecated_args[arg].get('reason') is not None:
                         r = self.deprecated_args[arg]['reason']
-                        fmt += " {reason}"
+                        fmt += " ({reason})"
                     if self.deprecated_args[arg].get('version') is not None:
                         v = self.deprecated_args[arg]['version']
                         fmt += "\n-- Deprecated since v{version}."

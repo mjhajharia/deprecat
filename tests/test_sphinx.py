@@ -38,7 +38,6 @@ def sphinx_directive(directive):
     return mapping[directive]
 
 
-
 # noinspection PyShadowingNames
 @pytest.mark.parametrize(
     "reason, version, remove_version, expected",
@@ -48,13 +47,13 @@ def sphinx_directive(directive):
             '1.2.0',
             '1.3.0',
             textwrap.dedent(
-                "\n.. {directive}:: {version}\n  {reason}\n\n    Warning: This deprecated feature will be removed in version\n   {remove_version}\n"
+                ".. {directive}:: {version}\n   {reason}\n\n   Warning: This deprecated feature will be removed in version\n   {remove_version}\n"
             ),
         ),
         (
-            None,
+            '',
             '1.2.0',
-            None,
+            "",
             textwrap.dedent(
                 """\
                 .. {directive}:: {version}
@@ -74,11 +73,18 @@ def test_has_sphinx_docstring(docstring, directive, sphinx_directive, reason, ve
 
     # is decorated with:
     decorator_factory = getattr(deprecat.sphinx, directive)
-    decorator = decorator_factory(reason=reason, version=version)
+    if directive in ("versionadded", "versionchanged") and remove_version is not None:
+        return
+
+    if directive in ("versionadded", "versionchanged"):
+        decorator = decorator_factory(reason=reason, version=version)
+        expected = expected.format(directive=sphinx_directive, version=version, reason=reason, remove_version=None)
+    else:
+        decorator = decorator_factory(reason=reason, version=version, remove_version=remove_version)
+        expected = expected.format(directive=sphinx_directive, version=version, reason=reason, remove_version=remove_version)
     foo = decorator(foo)
 
     # The function must contain this Sphinx docstring:
-    expected = expected.format(directive=sphinx_directive, version=version, reason=reason, remove_version=remove_version)
 
     current = textwrap.dedent(foo.__doc__)
     assert current.endswith(expected)
@@ -116,16 +122,16 @@ def test_has_sphinx_docstring(docstring, directive, sphinx_directive, reason, ve
             textwrap.dedent(
                 """\
                 .. {directive}:: {version}
-                {reason}
+                   {reason}
 
-                 Warning: This deprecated feature will be removed in version {remove_version}
+                   Warning: This deprecated feature will be removed in version {remove_version}
                 """
             ),
         ),
         (
-            None,
+            "",
             '1.2.0',
-            None,
+            "",
             textwrap.dedent(
                 """\
                 .. {directive}:: {version}
@@ -136,6 +142,8 @@ def test_has_sphinx_docstring(docstring, directive, sphinx_directive, reason, ve
     ids=["reason&version", "version"],
 )
 def test_cls_has_sphinx_docstring(docstring, directive, sphinx_directive, reason, version, remove_version, expected):
+    if directive in ("versionadded", "versionchanged") and remove_version is not None:
+        return
     # The class:
     class Foo(object):
         pass
@@ -145,8 +153,15 @@ def test_cls_has_sphinx_docstring(docstring, directive, sphinx_directive, reason
 
     # is decorated with:
     decorator_factory = getattr(deprecat.sphinx, directive)
-    decorator = decorator_factory(reason=reason, version=version)
+
+    if directive in ("versionadded", "versionchanged"):
+        decorator = decorator_factory(reason=reason, version=version, line_length=85)
+        expected = expected.format(directive=sphinx_directive, version=version, reason=reason, remove_version=None, line_length=85)
+    else:
+        decorator = decorator_factory(reason=reason, version=version, remove_version=remove_version, line_length=85)
+        expected = expected.format(directive=sphinx_directive, version=version, reason=reason, remove_version=remove_version, line_length=85)
     Foo = decorator(Foo)
+
 
     # The class must contain this Sphinx docstring:
     expected = expected.format(directive=sphinx_directive, version=version, remove_version=remove_version, reason=reason)
@@ -357,7 +372,7 @@ def test_deprecated_arg_warn_class_method():
         
     assert len(warns) == 1
     warn = warns[0]
-    assert 'Call to deprecated Parameter a. (nothing) -- Deprecated since v4.0.' in str(warn.message)
+    assert 'Call to deprecated Parameter a. (nothing)\n-- Deprecated since v4.0.' in str(warn.message)
 
 def test_deprecated_arg_warn_class_init():
 
@@ -372,7 +387,7 @@ def test_deprecated_arg_warn_class_init():
         foo_cls(a=3,b=4)
 
     warn = warns[0]
-    assert 'Call to deprecated Parameter a. (nothing) -- Deprecated since v4.0.' in str(warn.message)
+    assert 'Call to deprecated Parameter a. (nothing)\n-- Deprecated since v4.0.' in str(warn.message)
 
 def test_deprecated_arg_warn_function_docstring():
     @deprecat.sphinx.deprecat(deprecated_args={'a':{'version':'4.0','reason':'nothing', 'remove_version': '5.0'}})

@@ -6,8 +6,8 @@ deprecat
 
 """
 
-__version__ = "2.1.1"
-__author__ = u"Meenal Jhajharia <meenal@mjhajharia.com>"
-__credits__ = "(c) Meenal Jhajharia"
+__version__ = "2.1.2"
+__author__ = u"Meenal Jhajharia <meenal@mjhajharia.com> and contributors"
+__credits__ = "(c) Meenal Jhajharia and contributors"
 
 from deprecat.classic import deprecat
