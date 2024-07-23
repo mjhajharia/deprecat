@@ -134,7 +134,7 @@ class SphinxAdapter(ClassicAdapter):
             docstring = "\n"
 
         width = self.line_length - 3 if self.line_length > 3 else 2 ** 16
-        reason=self.reason
+        reason = self.reason
         if self.remove_version!="":
             reason += f'\n\nWarning: This deprecated feature will be removed in version {self.remove_version}'
         reason = textwrap.dedent(reason).strip()
@@ -211,7 +211,7 @@ class SphinxAdapter(ClassicAdapter):
                                 div_lines = [fmt.format(version=self.deprecated_args[arg]['version'],arg=arg)]
                             width = 2**16
                             if self.remove_version!="":
-                                self.reason += f'\n\n Warning: This deprecated feature will be removed in version {self.remove_version}'
+                                self.reason += f'\n\nWarning: This deprecated feature will be removed in version {self.remove_version}'
                             reason = textwrap.dedent(self.reason).strip()
                             #formatting for docstring
                             for paragraph in reason.splitlines():

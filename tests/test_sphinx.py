@@ -47,13 +47,13 @@ def sphinx_directive(directive):
             '1.2.0',
             '1.3.0',
             textwrap.dedent(
-                "\n.. {directive}:: {version}\n  {reason}\n\n    Warning: This deprecated feature will be removed in version\n   {remove_version}\n"
+                ".. {directive}:: {version}\n   {reason}\n\n   Warning: This deprecated feature will be removed in version\n   {remove_version}\n"
             ),
         ),
         (
             '',
             '1.2.0',
-            None,
+            "",
             textwrap.dedent(
                 """\
                 .. {directive}:: {version}
