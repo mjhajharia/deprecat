@@ -136,7 +136,7 @@ class SphinxAdapter(ClassicAdapter):
         width = self.line_length - 3 if self.line_length > 3 else 2 ** 16
         reason=self.reason
         if self.remove_version!="":
-            reason += f'\n\n Warning: This deprecated feature will be removed in version {self.remove_version}'
+            reason += f'\n\nWarning: This deprecated feature will be removed in version {self.remove_version}'
         reason = textwrap.dedent(reason).strip()
 
         if self.deprecated_args is None:
