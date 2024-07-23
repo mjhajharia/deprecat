@@ -372,7 +372,7 @@ def test_deprecated_arg_warn_class_method():
         
     assert len(warns) == 1
     warn = warns[0]
-    assert 'Call to deprecated Parameter a. (nothing) -- Deprecated since v4.0.' in str(warn.message)
+    assert 'Call to deprecated Parameter a. (nothing)\n-- Deprecated since v4.0.' in str(warn.message)
 
 def test_deprecated_arg_warn_class_init():
 
@@ -387,7 +387,7 @@ def test_deprecated_arg_warn_class_init():
         foo_cls(a=3,b=4)
 
     warn = warns[0]
-    assert 'Call to deprecated Parameter a. (nothing) -- Deprecated since v4.0.' in str(warn.message)
+    assert 'Call to deprecated Parameter a. (nothing)\n-- Deprecated since v4.0.' in str(warn.message)
 
 def test_deprecated_arg_warn_function_docstring():
     @deprecat.sphinx.deprecat(deprecated_args={'a':{'version':'4.0','reason':'nothing', 'remove_version': '5.0'}})
