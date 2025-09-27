@@ -41,7 +41,8 @@ setup(
             'PyTest-Cov         ; python_version >= "3.6"',
             'PyTest-Cov < 2.6   ; python_version < "3.6"',
             'bump2version < 1',
-            'sphinx < 2',
+            'sphinx',
+            'furo',
         ]
     },
     python_requires='>=3.6',

@@ -38,7 +38,6 @@ except ImportError:
         _class_stacklevel = 3
         
 class SphinxAdapter(ClassicAdapter):
-
     """
 
     Construct a wrapper adapter.
@@ -345,31 +344,32 @@ def deprecat(reason="", directive="deprecated", version="", remove_version="", l
     reason: str
         Reason for deprecation of this method or class.
 
+    directive: str
+        Sphinx directive to use, defaults to "deprecated".
+
     version: str
         Version of your project which deprecates this method or class.
 
     remove_version: str
         Version of your project which removes this method or class.
 
-    action: str
-        A warning filter used to specify the deprecation warning.
-        Can be one of "error", "ignore", "always", "default", "module", or "once".
-        If ``None`` or empty, the the global filtering mechanism is used.
-
-    : str
-        String of kwargs to be deprecated, e.g. "x y" to deprecate `x` and `y`.
+    line_length: numeric
+        Max line length of the directive text. If non null, a long text is wrapped in several lines.
 
     category: class
         The warning category to use for the deprecation warning.
         By default, the category class is :class:`~DeprecationWarning`,
         you can inherit this class to define your own deprecation warning category.
     
-    line_length: numeric
-        Max line length of the directive text. If non null, a long text is wrapped in several lines.
-
     deprecated_args: dict
         Dictionary in the following format to deprecate `x` and `y`
         deprecated_args = {'x': {'reason': 'some reason','version': '1.0'},'y': {'reason': 'another reason', 'version': '2.0'}}
+
+    action: str
+        A warning filter used to specify the deprecation warning.
+        Can be one of "error", "ignore", "always", "default", "module", or "once".
+        If ``None`` or empty, the the global filtering mechanism is used.
+
 
     Returns
     -------

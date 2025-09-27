@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.abspath('../'))
 # -- Project information -----------------------------------------------------
 
 project = 'deprecat'
-copyright = '2021, Meenal Jhajharia'
+copyright = '2021-, Meenal Jhajharia'
 author = 'Meenal Jhajharia'
 
 # The full version, including alpha/beta/rc tags
@@ -34,14 +34,14 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
-    'numpydoc']
+    'sphinx.ext.napoleon',
+]
 
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
-numpydoc_show_class_members = False 
 
 autodoc_default_options = {
     'members': True,

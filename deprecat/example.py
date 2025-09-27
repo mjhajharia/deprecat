@@ -1,6 +1,6 @@
 """
 Examples
-============================
+========
 
 This module contains examples for the deprecat package.
 """
