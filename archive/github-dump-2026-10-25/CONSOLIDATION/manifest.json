@@ -1,0 +1,22 @@
+{
+  "source_repository": "/Users/meenaljhajharia/github/mjhajharia/dump",
+  "source_head": "e9c618785e9a9a15aae3490ee5ef93c9f4fa3e72",
+  "files": [
+    {
+      "source": "/Users/meenaljhajharia/github/mjhajharia/dump/deprecator.py",
+      "destination": "archive/github-dump-2026-10-25/deprecator.py",
+      "sha256": "acb532492786610ee6eaa07ee2d74a02e0f51d9ff718e905db52af239d58a382",
+      "mode": "100644",
+      "mtime_ns": 1792972711764479681,
+      "source_blob": "eec8cb47c9871223d774c245e38cb5c26f6010c1"
+    },
+    {
+      "source": "/Users/meenaljhajharia/github/mjhajharia/dump/deprecate.md",
+      "destination": "archive/github-dump-2026-10-25/deprecate.md",
+      "sha256": "6cf19e0246d9db455a0f1d667e830b1487649abffad11644813806760ce8257b",
+      "mode": "100644",
+      "mtime_ns": 1792972711764422973,
+      "source_blob": "a86617909bc9f3282f9d64c2c64be94778fb0357"
+    }
+  ]
+}
